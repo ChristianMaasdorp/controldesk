@@ -1,6 +1,7 @@
 # Introduction
+# Project Management 
+# ControlDesk 
 
-![logo](_media/logo.png)
 
 This documentation will allow you to install and configure the Helper platform on a **production** environment but also on a **development** environment if you want to evolve it according to your needs.
 
