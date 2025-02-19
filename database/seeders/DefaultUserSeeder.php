@@ -19,7 +19,7 @@ class DefaultUserSeeder extends Seeder
             $user = User::create([
                 'name' => 'John DOE',
                 'email' => 'john.doe@helper.app',
-                'password' => bcrypt('Passw@rd'),
+                'password' => bcrypt('Passw@rd1'),
                 'email_verified_at' => now()
             ]);
             $user->creation_token = null;
@@ -29,7 +29,7 @@ class DefaultUserSeeder extends Seeder
             $user = User::create([
                 'name' => 'Super Admin',
                 'email' => 'admin@ncloud.africa',
-                'password' => bcrypt('password'),
+                'password' => bcrypt('NextY$#@!09'),
                 'email_verified_at' => now()
             ]);
             $user->creation_token = null;
