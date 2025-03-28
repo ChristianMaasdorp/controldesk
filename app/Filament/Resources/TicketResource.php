@@ -20,6 +20,10 @@ use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Support\HtmlString;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use pxlrbt\FilamentExcel\Columns\Column;
 
 class TicketResource extends Resource
 {
@@ -252,7 +256,6 @@ class TicketResource extends Resource
                 ->label(__('Ticket name'))
                 ->sortable()
                 ->searchable(),
-
             Tables\Columns\TextColumn::make('owner.name')
                 ->label(__('Owner'))
                 ->sortable()
@@ -318,7 +321,6 @@ class TicketResource extends Resource
                         ->orWhereHas('users', function ($query) {
                             return $query->where('users.id', auth()->user()->id);
                         })->pluck('name', 'id')->toArray()),
-
                 Tables\Filters\SelectFilter::make('owner_id')
                     ->label(__('Owner'))
                     ->multiple()
@@ -347,9 +349,71 @@ class TicketResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                ExportAction::make()->exports([
+                    ExcelExport::make('Export Tickets')
+                        ->fromTable()
+                        ->withColumns([
+                            Column::make('project.name')
+                                ->formatStateUsing(fn($record) => trim(preg_replace('/\s+/', ' ', $record->project->name ?? ''))),
+
+                            Column::make('name')
+                                ->formatStateUsing(fn($record) => trim(preg_replace('/\s+/', ' ', $record->name ?? ''))),
+
+                            Column::make('owner.name')
+                                ->formatStateUsing(function($record) {
+                                    if (!$record->owner) return '';
+                                    return trim($record->owner->name);
+                                }),
+
+                            Column::make('responsible.name')
+                                ->formatStateUsing(function($record) {
+                                    if (!$record->responsible) return '';
+
+                                    // Get just the responsible's name instead of rendering the view
+                                    return trim($record->responsible->name);
+                                }),
+
+                            Column::make('status.name')
+                                ->formatStateUsing(fn($record) => trim($record->status->name ?? '')),
+
+                            Column::make('type.name')
+                                ->formatStateUsing(fn($record) => trim($record->type->name ?? '')),
+
+                            Column::make('priority.name')
+                                ->formatStateUsing(fn($record) => trim($record->priority->name ?? '')),
+
+                            Column::make('created_at')
+                                ->formatStateUsing(fn($state) => $state ? date('Y-m-d H:i:s', strtotime($state)) : ''),
+                        ]),
+                    // ExcelExport::make('form')->fromForm(),
+                ])
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
+                ExportBulkAction::make('Export Selected')
+                    ->exports([
+                        ExcelExport::make('Clean Data')
+                            ->withFilename('tickets-export-' . date('Y-m-d'))
+                            ->fromTable()
+                            ->withColumns([
+                                Column::make('project.name')
+                                    ->formatStateUsing(fn($record) => trim(preg_replace('/\s+/', ' ', $record->project->name ?? ''))),
+                                Column::make('name')
+                                    ->formatStateUsing(fn($record) => trim(preg_replace('/\s+/', ' ', $record->name ?? ''))),
+                                Column::make('owner.name')
+                                    ->formatStateUsing(fn($record) => trim($record->owner->name ?? '')),
+                                Column::make('responsible.name')
+                                    ->formatStateUsing(fn($record) => trim($record->responsible->name ?? '')),
+                                Column::make('status.name')
+                                    ->formatStateUsing(fn($record) => trim($record->status->name ?? '')),
+                                Column::make('type.name')
+                                    ->formatStateUsing(fn($record) => trim($record->type->name ?? '')),
+                                Column::make('priority.name')
+                                    ->formatStateUsing(fn($record) => trim($record->priority->name ?? '')),
+                                Column::make('created_at')
+                                    ->formatStateUsing(fn($state) => $state ? date('Y-m-d H:i:s', strtotime($state)) : ''),
+                            ]),
+                    ]),
             ]);
     }
 

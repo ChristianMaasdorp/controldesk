@@ -13,16 +13,53 @@ use Illuminate\Support\Facades\DB;
 
 class MonthlyReport extends BarChartWidget
 {
-    protected function getHeading(): string
+    // Set to take up full width (bottom)
+    protected int|string|array $columnSpan = 'full';
+
+    // Set a lower sort order to appear last
+    protected static ?int $sort = 3;
+
+    // Default year filter
+    public ?string $filter = '2025';
+
+    // Property to store the selected user ID
+    public $selectedUserId = null;
+
+    // Listen for user changes from parent
+    protected $listeners = ['userChanged' => 'onUserChanged'];
+
+    public function __construct($id = null)
     {
-        return __('Logged time monthly');
+        parent::__construct($id);
+
+        // Default to current user
+        $this->selectedUserId = auth()->id();
     }
 
-    public ?string $filter = '2023';
+    // Called when the user selection changes
+    public function onUserChanged($userId): void
+    {
+        $this->selectedUserId = $userId;
 
+        // Force chart to refresh with new data
+        if (method_exists($this, 'updateChartData')) {
+            $this->updateChartData();
+        }
+    }
+
+    protected function getHeading(): string
+    {
+        $user = $this->getUserToDisplay();
+        return __('Logged time monthly') . ($user->id !== auth()->id() ? ' - ' . $user->name : '');
+    }
+
+    // Rest of the methods remain the same
+    // ... (include the rest of the existing methods)
     protected function getData(): array
     {
-        $collection = $this->filter(auth()->user(), [
+        $user = $this->getUserToDisplay();
+
+        $collection = $this->filter($user, [
             'year' => $this->filter
         ]);
 
@@ -31,7 +68,7 @@ class MonthlyReport extends BarChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => __('Total time logged'),
+                    'label' => __('Total time logged for ') . $user->name,
                     'data' => $datasets['sets'],
                     'backgroundColor' => [
                         'rgba(54, 162, 235, .6)'
@@ -45,11 +82,27 @@ class MonthlyReport extends BarChartWidget
         ];
     }
 
+    // Get the user whose data should be displayed
+    protected function getUserToDisplay(): User
+    {
+        // Get selected user when available
+        if (!empty($this->selectedUserId)) {
+            $selectedUser = User::find($this->selectedUserId);
+            if ($selectedUser) {
+                return $selectedUser;
+            }
+        }
+
+        // Default to current user
+        return auth()->user();
+    }
+
     protected function getFilters(): ?array
     {
         return [
-            2022 => 2022,
-            2023 => 2023
+            2024 => 2024,
+            2025 => 2025,
+            2026 => 2026,
         ];
     }
 
@@ -59,12 +112,6 @@ class MonthlyReport extends BarChartWidget
                 'display' => true,
             ],
         ],
-    ];
-
-    protected int|string|array $columnSpan = [
-        'sm' => 1,
-        'md' => 6,
-        'lg' => 3
     ];
 
     protected function filter(User $user, array $params)

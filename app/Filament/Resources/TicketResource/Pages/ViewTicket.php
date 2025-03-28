@@ -90,40 +90,75 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->color('warning')
                 ->modalWidth('sm')
                 ->modalHeading(__('Log worked time'))
-                ->modalSubheading(__('Use the following form to add your worked time in this ticket.'))
+                ->modalSubheading(__('Use the following form to add worked time for this ticket.'))
                 ->modalButton(__('Log'))
-                ->visible(fn() => in_array(
-                    auth()->user()->id,
-                    [$this->record->owner_id, $this->record->responsible_id]
-                ))
                 ->form([
+                    Select::make('user_id')
+                        ->label(__('User'))
+                        ->searchable()
+                        ->options(function ($livewire) {
+                            // Get the ticket owner and responsible person
+                            $assignedUsers = collect([]);
+
+                            if ($livewire->record->owner_id) {
+                                $assignedUsers->put(
+                                    $livewire->record->owner_id,
+                                    $livewire->record->owner->name
+                                );
+                            }
+
+                            if ($livewire->record->responsible_id &&
+                                $livewire->record->responsible_id != $livewire->record->owner_id) {
+                                $assignedUsers->put(
+                                    $livewire->record->responsible_id,
+                                    $livewire->record->responsible->name
+                                );
+                            }
+
+                            return $assignedUsers->toArray();
+                        })
+                        ->default(function () {
+                            // Default to current user if they're assigned to the ticket
+                            $currentUserId = auth()->user()->id;
+                            $record = $this->record;
+
+                            if ($currentUserId == $record->owner_id || $currentUserId == $record->responsible_id) {
+                                return $currentUserId;
+                            }
+
+                            return null;
+                        })
+                        ->required(),
+
                     TextInput::make('time')
-                        ->label(__('Time to log'))
+                        ->label(__('Time to log per hour'))
                         ->numeric()
                         ->required(),
+
                     Select::make('activity_id')
                         ->label(__('Activity'))
                         ->searchable()
-                        ->reactive()
-                        ->options(function ($get, $set) {
+                        ->options(function () {
                             return Activity::all()->pluck('name', 'id')->toArray();
                         }),
+
                     Textarea::make('comment')
                         ->label(__('Comment'))
                         ->rows(3),
                 ])
-                ->action(function (Collection $records, array $data): void {
-                    $value = $data['time'];
-                    $comment = $data['comment'];
+                ->action(function (array $data): void {
+                    // Create the time log entry
                     TicketHour::create([
                         'ticket_id' => $this->record->id,
                         'activity_id' => $data['activity_id'],
-                        'user_id' => auth()->user()->id,
-                        'value' => $value,
-                        'comment' => $comment
+                        'user_id' => $data['user_id'], // The user who did the work
+                        'logged_by_id' => auth()->user()->id, // The user who logged the entry
+                        'value' => $data['time'],
+                        'comment' => $data['comment'] ?? null
                     ]);
+
                     $this->record->refresh();
-                    $this->notify('success', __('Time logged into ticket'));
+                    $this->notify('success', __('Time logged successfully'));
                 }),
             Actions\ActionGroup::make([
                 Actions\Action::make('exportLogHours')

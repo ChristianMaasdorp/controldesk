@@ -13,30 +13,61 @@ use Illuminate\Support\Facades\DB;
 
 class ActivitiesReport extends BarChartWidget
 {
-    protected int|string|array $columnSpan = [
-        'sm' => 1,
-        'md' => 6,
-        'lg' => 3
-    ];
+    // Set to take up 1 column (right side)
+    protected int|string|array $columnSpan = 1;
 
-    public ?string $filter = '2023';
+    // Set a high sort order to appear second
+    protected static ?int $sort = 2;
+
+    public ?string $filter = '2025';
+
+    // Property to store the selected user ID
+    public $selectedUserId = null;
+
+    // Listen for user changes from parent
+    protected $listeners = ['userChanged' => 'onUserChanged'];
+
+    public function __construct($id = null)
+    {
+        parent::__construct($id);
+
+        // Default to current user
+        $this->selectedUserId = auth()->id();
+    }
+
+    // Called when the user selection changes
+    public function onUserChanged($userId): void
+    {
+        $this->selectedUserId = $userId;
+
+        // Force chart to refresh with new data
+        if (method_exists($this, 'updateChartData')) {
+            $this->updateChartData();
+        }
+    }
 
     protected function getHeading(): string
     {
-        return __('Logged time by activity');
+        $user = $this->getUserToDisplay();
+        return __('Logged time by activity') . ($user->id !== auth()->id() ? ' - ' . $user->name : '');
     }
 
+    // Rest of the methods remain the same
+    // ... (include the rest of the existing methods)
     protected function getFilters(): ?array
     {
         return [
-            2022 => 2022,
-            2023 => 2023
+            2024 => 2024,
+            2025 => 2025,
+            2026 => 2026,
         ];
     }
 
     protected function getData(): array
     {
-        $collection = $this->filter(auth()->user(), [
+        $user = $this->getUserToDisplay();
+
+        $collection = $this->filter($user, [
             'year' => $this->filter
         ]);
 
@@ -57,6 +88,21 @@ class ActivitiesReport extends BarChartWidget
             ],
             'labels' => $datasets['labels'],
         ];
+    }
+
+    // Get the user whose data should be displayed
+    protected function getUserToDisplay(): User
+    {
+        // Get selected user when available
+        if (!empty($this->selectedUserId)) {
+            $selectedUser = User::find($this->selectedUserId);
+            if ($selectedUser) {
+                return $selectedUser;
+            }
+        }
+
+        // Default to current user
+        return auth()->user();
     }
 
     protected function getDatasets(Collection $collection): array
