@@ -248,6 +248,10 @@ class TicketResource extends Resource
                 ->searchable();
         }
         $columns = array_merge($columns, [
+            Tables\Columns\TextColumn::make('code')
+                ->label(__('Ticket  code'))
+                ->sortable()
+                ->searchable(),
             Tables\Columns\TextColumn::make('id')
                 ->label(__('Ticket ID'))
                 ->sortable()

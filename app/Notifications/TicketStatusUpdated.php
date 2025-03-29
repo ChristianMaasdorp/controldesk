@@ -50,30 +50,59 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
+        $mailMessage = (new MailMessage)
             ->line(__('The status of ticket :ticket has been updated.', ['ticket' => $this->ticket->name]))
             ->line('- ' . __('Old status:') . ' ' . $this->activity->oldStatus->name)
-            ->line('- ' . __('New status:') . ' ' . $this->activity->newStatus->name)
-            ->line(__('See more details of this ticket by clicking on the button below:'))
+            ->line('- ' . __('New status:') . ' ' . $this->activity->newStatus->name);
+
+        // Add responsible change information if available
+        if ($this->activity->old_responsible_id !== null &&
+            $this->activity->new_responsible_id !== null &&
+            $this->activity->old_responsible_id != $this->activity->new_responsible_id) {
+
+            $oldResponsibleName = $this->activity->oldResponsible?->name ?? __('Unassigned');
+            $newResponsibleName = $this->activity->newResponsible?->name ?? __('Unassigned');
+
+            $mailMessage->line('- ' . __('Old responsible:') . ' ' . $oldResponsibleName)
+                ->line('- ' . __('New responsible:') . ' ' . $newResponsibleName);
+        }
+
+        $mailMessage->line(__('See more details of this ticket by clicking on the button below:'))
             ->action(__('View details'), route('filament.resources.tickets.share', $this->ticket->code));
+
+        return $mailMessage;
     }
 
     public function toDatabase(User $notifiable): array
     {
+        $body = __('Old status: :oldStatus - New status: :newStatus', [
+            'oldStatus' => $this->activity->oldStatus->name,
+            'newStatus' => $this->activity->newStatus->name,
+        ]);
+
+        // Add responsible change information if available
+        if ($this->activity->old_responsible_id !== null &&
+            $this->activity->new_responsible_id !== null &&
+            $this->activity->old_responsible_id != $this->activity->new_responsible_id) {
+
+            $oldResponsibleName = $this->activity->oldResponsible?->name ?? __('Unassigned');
+            $newResponsibleName = $this->activity->newResponsible?->name ?? __('Unassigned');
+
+            $body .= "\n" . __('Responsible changed from :oldResponsible to :newResponsible', [
+                    'oldResponsible' => $oldResponsibleName,
+                    'newResponsible' => $newResponsibleName,
+                ]);
+        }
+
         return FilamentNotification::make()
             ->title(__('Ticket status updated'))
             ->icon('heroicon-o-ticket')
-            ->body(
-                fn() => __('Old status: :oldStatus - New status: :newStatus', [
-                    'oldStatus' => $this->activity->oldStatus->name,
-                    'newStatus' => $this->activity->newStatus->name,
-                ])
-            )
+            ->body($body)
             ->actions([
                 Action::make('view')
                     ->link()
                     ->icon('heroicon-s-eye')
-                    ->url(fn() => route('filament.resources.tickets.share', $this->ticket->code)),
+                    ->url(route('filament.resources.tickets.share', $this->ticket->code)),
             ])
             ->getDatabaseMessage();
     }
