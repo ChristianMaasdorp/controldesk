@@ -239,4 +239,25 @@ class Ticket extends Model implements HasMedia
             get: fn() => $this->estimationProgress
         );
     }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(TicketNote::class, 'ticket_id', 'id');
+    }
+
+    public function unreadNotesCount(): Attribute
+    {
+        return new Attribute(
+            get: function () {
+                if ($this->responsible_id !== auth()->user()->id) {
+                    return 0;
+                }
+
+                return $this->notes()
+                    ->where('is_read', false)
+                    ->count();
+            }
+        );
+    }
+
 }

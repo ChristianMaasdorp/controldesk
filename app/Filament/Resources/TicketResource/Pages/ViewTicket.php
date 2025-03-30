@@ -11,6 +11,7 @@ use App\Models\TicketHour;
 use App\Models\TicketStatus;
 use App\Models\TicketSubscriber;
 use App\Models\User;
+use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -24,6 +25,7 @@ use Filament\Pages\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\TicketNote;
 
 class ViewTicket extends ViewRecord implements HasForms
 {
@@ -35,15 +37,90 @@ class ViewTicket extends ViewRecord implements HasForms
 
     public string $tab = 'comments';
 
-    protected $listeners = ['doDeleteComment'];
+    // Combined listeners for both comments and notes
+    protected $listeners = ['doDeleteComment', 'doDeleteNote'];
 
-    public $selectedCommentId;
+    public $selectedCommentId, $selectedNoteId;
 
     public function mount($record): void
     {
         parent::mount($record);
         $this->form->fill();
+        $this->noteForm->fill();
     }
+
+    protected function getForms(): array
+    {
+        return [
+            'form' => $this->makeForm()
+                ->schema($this->getFormSchema()),
+            'noteForm' => $this->makeForm()
+                ->schema($this->getNoteFormSchema()),
+        ];
+    }
+
+
+    protected function getNoteFormSchema(): array
+    {
+        return [
+            Forms\Components\Grid::make()
+                ->columns(1)
+                ->schema([
+                    Forms\Components\Select::make('intended_for_id')
+                        ->label(__('Intended for'))
+                        ->options(function () {
+                            $options = [];
+
+                            // Always include the responsible person if there is one
+                            if ($this->record->responsible_id) {
+                                $options[$this->record->responsible_id] = $this->record->responsible->name . ' (' . __('Responsible') . ')';
+                            }
+
+                            // Include other project members
+                            foreach ($this->record->project->users as $user) {
+                                if (!isset($options[$user->id])) {
+                                    $options[$user->id] = $user->name;
+                                }
+                            }
+
+                            return $options;
+                        })
+                        ->default(function () {
+                            return $this->record->responsible_id;
+                        }),
+
+                    Forms\Components\Select::make('priority')
+                        ->label(__('Priority'))
+                        ->options([
+                            'low' => __('Low'),
+                            'medium' => __('Medium'),
+                            'high' => __('High'),
+                        ])
+                        ->default('medium'),
+
+                    Forms\Components\TextInput::make('category')
+                        ->label(__('Category'))
+                        ->maxLength(50),
+
+                    Forms\Components\RichEditor::make('content')
+                        ->disableLabel()
+                        ->placeholder(__('Type a new note'))
+                        ->required(),
+                ]),
+        ];
+    }
+
+    protected function getFormSchema(): array
+    {
+        return [
+            RichEditor::make('comment')
+                ->disableLabel()
+                ->placeholder(__('Type a new comment'))
+                ->required()
+        ];
+    }
+
+
 
     protected function getActions(): array
     {
@@ -423,19 +500,50 @@ class ViewTicket extends ViewRecord implements HasForms
         ];
     }
 
+
     public function selectTab(string $tab): void
     {
         $this->tab = $tab;
-    }
 
-    protected function getFormSchema(): array
+        // Use emit instead of dispatch for older Livewire versions
+        $this->emit('tabChanged', $tab);
+
+        // Mark notes as read when opening the notes tab if user is the responsible person
+        if ($tab === 'notes' && $this->record->responsible_id === auth()->user()->id) {
+            TicketNote::where('ticket_id', $this->record->id)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+
+            $this->record->refresh();
+        }
+    }
+    public function submitNote(): void
     {
-        return [
-            RichEditor::make('comment')
-                ->disableLabel()
-                ->placeholder(__('Type a new comment'))
-                ->required()
-        ];
+        $data = $this->noteForm->getState();
+
+        if ($this->selectedNoteId) {
+            TicketNote::where('id', $this->selectedNoteId)
+                ->update([
+                    'intended_for_id' => $data['intended_for_id'],
+                    'priority' => $data['priority'],
+                    'category' => $data['category'],
+                    'content' => $data['content'],
+                    'is_read' => false // Mark as unread when updated
+                ]);
+        } else {
+            TicketNote::create([
+                'user_id' => auth()->user()->id,
+                'ticket_id' => $this->record->id,
+                'intended_for_id' => $data['intended_for_id'],
+                'priority' => $data['priority'],
+                'category' => $data['category'],
+                'content' => $data['content']
+            ]);
+        }
+
+        $this->record->refresh();
+        $this->cancelEditNote();
+        $this->notify('success', __('Note saved'));
     }
 
     public function submitComment(): void
@@ -476,6 +584,21 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->selectedCommentId = $commentId;
     }
 
+    public function editNote(int $noteId): void
+    {
+        $note = $this->record->notes->where('id', $noteId)->first();
+
+        if ($note) {
+            $this->noteForm->fill([
+                'intended_for_id' => $note->intended_for_id,
+                'priority' => $note->priority,
+                'category' => $note->category,
+                'content' => $note->content
+            ]);
+            $this->selectedNoteId = $noteId;
+        }
+    }
+
     public function deleteComment(int $commentId): void
     {
         Notification::make()
@@ -497,6 +620,27 @@ class ViewTicket extends ViewRecord implements HasForms
             ->send();
     }
 
+    public function deleteNote(int $noteId): void
+    {
+        Notification::make()
+            ->warning()
+            ->title(__('Delete confirmation'))
+            ->body(__('Are you sure you want to delete this note?'))
+            ->actions([
+                Action::make('confirm')
+                    ->label(__('Confirm'))
+                    ->color('danger')
+                    ->button()
+                    ->close()
+                    ->emit('doDeleteNote', compact('noteId')),
+                Action::make('cancel')
+                    ->label(__('Cancel'))
+                    ->close()
+            ])
+            ->persistent()
+            ->send();
+    }
+
     public function doDeleteComment(int $commentId): void
     {
         TicketComment::where('id', $commentId)->delete();
@@ -504,9 +648,27 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->notify('success', __('Comment deleted'));
     }
 
+    public function doDeleteNote(int $noteId): void
+    {
+        TicketNote::where('id', $noteId)->delete();
+        $this->record->refresh();
+        $this->notify('success', __('Note deleted'));
+    }
+
     public function cancelEditComment(): void
     {
         $this->form->fill();
         $this->selectedCommentId = null;
+    }
+
+    public function cancelEditNote(): void
+    {
+        $this->noteForm->fill();
+        $this->selectedNoteId = null;
+    }
+
+    public function canSubmitComment(): bool
+    {
+        return $this->record->responsible_id === auth()->user()->id;
     }
 }
