@@ -36,3 +36,16 @@ Route::name('oidc.')
         Route::get('redirect', [OidcAuthController::class, 'redirect'])->name('redirect');
         Route::get('callback', [OidcAuthController::class, 'callback'])->name('callback');
     });
+
+Route::get('/ticket/note/{note}/read', function ($note) {
+    $note = \App\Models\TicketNote::findOrFail($note);
+
+    // Only allow marking as read if user is the intended recipient or responsible
+    if (auth()->user()->id === $note->intended_for_id ||
+        auth()->user()->id === $note->ticket->responsible_id) {
+        $note->markAsRead();
+        return redirect()->route('filament.resources.tickets.view', $note->ticket);
+    }
+
+    return abort(403);
+})->middleware(['auth'])->name('ticket.note.read');
