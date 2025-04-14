@@ -427,10 +427,24 @@ class ViewTicket extends ViewRecord implements HasForms
                         })
                         ->required(),
 
-                    TextInput::make('time')
-                        ->label(__('Time to log per hour'))
-                        ->numeric()
-                        ->required(),
+                    Forms\Components\Grid::make()
+                        ->columns(2)
+                        ->schema([
+                            TextInput::make('hours')
+                                ->label(__('Hours'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(999)
+                                ->default(0)
+                                ->required(),
+                            TextInput::make('minutes')
+                                ->label(__('Minutes'))
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(59)
+                                ->default(0)
+                                ->required(),
+                        ]),
 
                     Select::make('activity_id')
                         ->label(__('Activity'))
@@ -450,7 +464,7 @@ class ViewTicket extends ViewRecord implements HasForms
                         'activity_id' => $data['activity_id'],
                         'user_id' => $data['user_id'], // The user who did the work
                         'logged_by_id' => auth()->user()->id, // The user who logged the entry
-                        'value' => $data['time'],
+                        'value' => $data['hours'] + ($data['minutes'] / 60),
                         'comment' => $data['comment'] ?? null
                     ]);
 
@@ -458,7 +472,7 @@ class ViewTicket extends ViewRecord implements HasForms
                     if (!empty($data['comment'])) {
                         $userName = User::find($data['user_id'])->name;
                         $activityName = Activity::find($data['activity_id'])?->name ?? '';
-                        $hours = $data['time'];
+                        $hours = $data['hours'] + ($data['minutes'] / 60);
 
                         // Create a formatted comment that includes the time logging details
                         $commentContent = "**Time Logged**: {$hours}h - {$activityName} by {$userName}\n\n{$data['comment']}";

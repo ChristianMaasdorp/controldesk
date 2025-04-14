@@ -110,11 +110,16 @@
                 <span class="text-gray-500 text-sm font-medium">
                     {{ __('Estimation') }}
                 </span>
-                <div class="w-full flex items-center gap-1 text-gray-500">
-                    @if($record->estimation)
-                        {{ $record->estimationForHumans }}
-                    @else
-                        -
+                <div class="w-full text-gray-500">
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ number_format($record->total_estimation, 2) }} {{ __('hours') }}</span>
+                        <span class="text-gray-400">({{ $record->estimation_hours ?? 0 }}h {{ $record->estimation_minutes ?? 0 }}m)</span>
+                    </div>
+                    @if($record->estimation_start_date)
+                        <div class="mt-1">
+                            <span class="text-gray-400">{{ __('Start Date') }}:</span>
+                            <span class="ml-1">{{ $record->estimation_start_date->format(__('Y-m-d g:i A')) }}</span>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -129,7 +134,12 @@
                             <span class="text-base font-medium
                                          text-{{ $record->estimationProgress > 100 ? 'danger' : 'primary' }}-700
                                          dark:text-white">
-                                {{ $record->totalLoggedHours }}
+                                @php
+                                    $totalHours = $record->totalLoggedInHours;
+                                    $hours = floor($totalHours);
+                                    $minutes = round(($totalHours - $hours) * 60);
+                                @endphp
+                                {{ $hours }}h {{ $minutes }}m
                             </span>
                             <span class="text-sm font-medium
                                          text-{{ $record->estimationProgress > 100 ? 'danger' : 'primary' }}-700

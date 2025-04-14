@@ -52,7 +52,11 @@ class TimesheetExport implements FromCollection, WithHeadings
                 'details' => $item->comment,
                 'user' => $item->user->name,
                 'time' => $item->forHumans,
-                'hours' => number_format($item->value, 2, ',', ' '),
+                'hours' => function($item) {
+                    $hours = floor($item->value);
+                    $minutes = round(($item->value - $hours) * 60);
+                    return sprintf('%dh %dm', $hours, $minutes);
+                },
                 'activity' => $item->activity ? $item->activity->name : '-',
                 'date' => $item->created_at->format(__('Y-m-d g:i A')),
             ]);
