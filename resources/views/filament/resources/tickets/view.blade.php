@@ -134,12 +134,7 @@
                             <span class="text-base font-medium
                                          text-{{ $record->estimationProgress > 100 ? 'danger' : 'primary' }}-700
                                          dark:text-white">
-                                @php
-                                    $totalHours = $record->totalLoggedInHours;
-                                    $hours = floor($totalHours);
-                                    $minutes = round(($totalHours - $hours) * 60);
-                                @endphp
-                                {{ $hours }}h {{ $minutes }}m
+                                {{ $record->totalLoggedHours }}
                             </span>
                             <span class="text-sm font-medium
                                          text-{{ $record->estimationProgress > 100 ? 'danger' : 'primary' }}-700
