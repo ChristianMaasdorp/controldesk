@@ -32,18 +32,11 @@ class UserTimeLogged extends BarChartWidget
         $query = User::query();
         $query->has('hours');
         $query->limit(10);
-        $users = $query->get();
-        
         return [
             'datasets' => [
                 [
-                    'label' => __('Total time logged'),
-                    'data' => $users->map(function ($user) {
-                        $totalHours = $user->totalLoggedInHours;
-                        $hours = floor($totalHours);
-                        $minutes = round(($totalHours - $hours) * 60);
-                        return sprintf('%dh %dm', $hours, $minutes);
-                    })->toArray(),
+                    'label' => __('Total time logged (hours)'),
+                    'data' => $query->get()->pluck('totalLoggedInHours')->toArray(),
                     'backgroundColor' => [
                         'rgba(54, 162, 235, .6)'
                     ],
@@ -52,7 +45,7 @@ class UserTimeLogged extends BarChartWidget
                     ],
                 ],
             ],
-            'labels' => $users->pluck('name')->toArray(),
+            'labels' => $query->get()->pluck('name')->toArray(),
         ];
     }
 }
