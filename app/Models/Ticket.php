@@ -30,8 +30,15 @@ class Ticket extends Model implements HasMedia
         'order',
         'type_id',
         'priority_id',
-        'estimation', 'epic_id',
+        'estimation_hours',
+        'estimation_minutes',
+        'estimation_start_date',
+        'epic_id',
         'sprint_id'
+    ];
+
+    protected $casts = [
+        'estimation_start_date' => 'datetime',
     ];
 
     public static function boot()
@@ -258,6 +265,13 @@ class Ticket extends Model implements HasMedia
                     ->count();
             }
         );
+    }
+
+    public function getTotalEstimationAttribute()
+    {
+        $hours = $this->estimation_hours ?? 0;
+        $minutes = $this->estimation_minutes ?? 0;
+        return $hours + ($minutes / 60);
     }
 
 }

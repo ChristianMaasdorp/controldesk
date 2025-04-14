@@ -183,14 +183,29 @@ class TicketResource extends Resource
                             ->required()
                             ->columnSpan(2),
 
-                        Forms\Components\Grid::make()
-                            ->columnSpan(2)
-                            ->columns(12)
+                        Forms\Components\Card::make()
+                            ->label(__('Estimation'))
                             ->schema([
-                                Forms\Components\TextInput::make('estimation')
-                                    ->label(__('Estimation time'))
-                                    ->numeric()
-                                    ->columnSpan(2),
+                                Forms\Components\Grid::make()
+                                    ->columns(3)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('estimation_hours')
+                                            ->label(__('Hours'))
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->maxValue(999)
+                                            ->default(0),
+                                        Forms\Components\TextInput::make('estimation_minutes')
+                                            ->label(__('Minutes'))
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->maxValue(59)
+                                            ->default(0),
+                                        Forms\Components\DateTimePicker::make('estimation_start_date')
+                                            ->label(__('Start Date'))
+                                            ->displayFormat('Y-m-d H:i')
+                                            ->withoutSeconds(),
+                                    ]),
                             ]),
 
                         Forms\Components\Repeater::make('relations')
@@ -306,6 +321,15 @@ class TicketResource extends Resource
 
             Tables\Columns\TextColumn::make('created_at')
                 ->label(__('Created at'))
+                ->dateTime()
+                ->sortable()
+                ->searchable(),
+            Tables\Columns\TextColumn::make('total_estimation')
+                ->label(__('Total Estimation'))
+                ->formatStateUsing(fn($state) => number_format($state, 2) . ' ' . __('hours'))
+                ->sortable(),
+            Tables\Columns\TextColumn::make('estimation_start_date')
+                ->label(__('Start Date'))
                 ->dateTime()
                 ->sortable()
                 ->searchable(),

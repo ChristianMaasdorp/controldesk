@@ -31,11 +31,18 @@ class TicketTimeLogged extends BarChartWidget
         $query = Ticket::query();
         $query->has('hours');
         $query->limit(10);
+        $tickets = $query->get();
+        
         return [
             'datasets' => [
                 [
-                    'label' => __('Total time logged (hours)'),
-                    'data' => $query->get()->pluck('totalLoggedInHours')->toArray(),
+                    'label' => __('Total time logged'),
+                    'data' => $tickets->map(function ($ticket) {
+                        $totalHours = $ticket->totalLoggedInHours;
+                        $hours = floor($totalHours);
+                        $minutes = round(($totalHours - $hours) * 60);
+                        return sprintf('%dh %dm', $hours, $minutes);
+                    })->toArray(),
                     'backgroundColor' => [
                         'rgba(54, 162, 235, .6)'
                     ],
@@ -44,7 +51,7 @@ class TicketTimeLogged extends BarChartWidget
                     ],
                 ],
             ],
-            'labels' => $query->get()->pluck('code')->toArray(),
+            'labels' => $tickets->pluck('code')->toArray(),
         ];
     }
 }
