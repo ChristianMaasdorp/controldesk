@@ -61,17 +61,17 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->noteForm->fill();
 
         // Fetch GitHub commits if a branch is associated
-        // Assuming the ticket model has a 'github_branch' attribute
+        // Assuming the ticket model has a 'branch' attribute
         if (!empty($this->record->branch)) {
             try {
                 // Use the injected service instance
-                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->github_branch);
+                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->branch);
             } catch (Exception $e) {
                 Log::error("Failed to fetch GitHub commits for ticket {$this->record->id}: " . $e->getMessage());
                 Notification::make()
                     ->danger()
                     ->title(__('GitHub Error'))
-                    ->body(__('Could not fetch commits for branch: ') . $this->record->github_branch)
+                    ->body(__('Could not fetch commits for branch: ') . $this->record->branch)
                     ->send();
                 $this->githubCommits = null; // Ensure it's null on error
             }

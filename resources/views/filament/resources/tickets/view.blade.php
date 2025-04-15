@@ -446,7 +446,7 @@
                 @if(!is_null($githubCommits))
                     @if(empty($githubCommits))
                         <div class="text-center text-gray-500 py-5">
-                            {{ __('No commits found for branch:') }} {{ $record->github_branch }}
+                            {{ __('No commits found for branch:') }} {{ $record->branch }}
                         </div>
                     @else
                         <div class="flow-root">
