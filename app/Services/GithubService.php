@@ -11,14 +11,18 @@ class GithubService{
 // Get list of branches
         $branches = $client->repo()->branches('jacquestrdx123', 'CibaRebuildSystem');
 
-        $commits=[];
+        $exports=[];
 // Get commits for a branch
         foreach($branches as $branch){
-            $commits[] = $client->repo()->commits()->all('jacquestrdx123', 'CibaRebuildSystem', ['sha' =>$branch['name']]);
-
+            $exports[$branch['name']]['commits'] = $client->repo()->commits()->all('jacquestrdx123', 'CibaRebuildSystem', ['sha' =>$branch['name']]);
         }
 
-// Get a single commit
-        dd($branches,$commits);
+
+        foreach ($exports as $export){
+            foreach($export['commits'] as $commit){
+                dd($commit);
+            }
+        }
+
     }
 }
