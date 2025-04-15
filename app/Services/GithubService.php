@@ -14,7 +14,7 @@ class GithubService{
         $commits=[];
 // Get commits for a branch
         foreach($branches as $branch){
-            $commits[] = $client->repo()->commits()->all('owner', 'repo', ['sha' =>$branch['name']]);
+            $commits[] = $client->repo()->commits()->all('jacquestrdx123', 'CibaRebuildSystem', ['sha' =>$branch['name']]);
 
         }
 
