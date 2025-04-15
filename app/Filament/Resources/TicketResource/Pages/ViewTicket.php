@@ -11,6 +11,8 @@ use App\Models\TicketHour;
 use App\Models\TicketStatus;
 use App\Models\TicketSubscriber;
 use App\Models\User;
+use App\Services\GithubService;
+use Exception;
 use Filament\Forms;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -26,6 +28,7 @@ use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\TicketNote;
+use Illuminate\Support\Facades\Log;
 
 class ViewTicket extends ViewRecord implements HasForms
 {
@@ -37,16 +40,42 @@ class ViewTicket extends ViewRecord implements HasForms
 
     public string $tab = 'comments';
 
+    public ?array $githubCommits = null;
+
     // Combined listeners for both comments and notes
     protected $listeners = ['doDeleteComment', 'doDeleteNote'];
 
     public $selectedCommentId, $selectedNoteId;
+
+    protected GithubService $githubService;
+
+    public function boot(GithubService $githubService): void
+    {
+        $this->githubService = $githubService;
+    }
 
     public function mount($record): void
     {
         parent::mount($record);
         $this->form->fill();
         $this->noteForm->fill();
+
+        // Fetch GitHub commits if a branch is associated
+        // Assuming the ticket model has a 'github_branch' attribute
+        if (!empty($this->record->branch)) {
+            try {
+                // Use the injected service instance
+                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->github_branch);
+            } catch (Exception $e) {
+                Log::error("Failed to fetch GitHub commits for ticket {$this->record->id}: " . $e->getMessage());
+                Notification::make()
+                    ->danger()
+                    ->title(__('GitHub Error'))
+                    ->body(__('Could not fetch commits for branch: ') . $this->record->github_branch)
+                    ->send();
+                $this->githubCommits = null; // Ensure it's null on error
+            }
+        }
     }
 
     protected function getForms(): array
@@ -520,15 +549,24 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->tab = $tab;
 
         // Use emit instead of dispatch for older Livewire versions
-        $this->emit('tabChanged', $tab);
+        // $this->emit('tabChanged', $tab); // Emit might not be needed if using wire:click and conditional rendering
 
-        // Mark notes as read when opening the notes tab if user is the responsible person
-        if ($tab === 'notes' && $this->record->responsible_id === auth()->user()->id) {
+        // Mark notes as read when opening the notes tab if user is the responsible person or intended recipient
+        if ($tab === 'notes' && (
+                $this->record->responsible_id === auth()->user()->id ||
+                TicketNote::where('ticket_id', $this->record->id)
+                    ->where('intended_for_id', auth()->user()->id)
+                    ->where('is_read', false)
+                    ->exists()
+            )
+        ) {
             TicketNote::where('ticket_id', $this->record->id)
+                ->where('intended_for_id', auth()->user()->id) // Only mark as read if intended for current user
                 ->where('is_read', false)
                 ->update(['is_read' => true]);
 
-            $this->record->refresh();
+            // No need to call refresh here as Livewire will re-render on property change
+            // $this->record->refresh();
         }
     }
     public function submitNote(): void
@@ -683,6 +721,21 @@ class ViewTicket extends ViewRecord implements HasForms
 
     public function canSubmitComment(): bool
     {
-        return $this->record->responsible_id === auth()->user()->id;
+        // Example logic, adjust as needed
+        // Allow commenting if user is owner, responsible, admin, or subscribed
+        return $this->record->owner_id === auth()->user()->id ||
+               $this->record->responsible_id === auth()->user()->id ||
+               $this->isAdministrator() ||
+               $this->record->subscribers()->where('users.id', auth()->user()->id)->exists();
+    }
+
+    public function canSubmitNote(): bool
+    {
+        // Example logic, adjust as needed
+        // Allow adding notes if user is owner, responsible, admin, or subscribed
+        return $this->record->owner_id === auth()->user()->id ||
+               $this->record->responsible_id === auth()->user()->id ||
+               $this->isAdministrator() ||
+               $this->record->subscribers()->where('users.id', auth()->user()->id)->exists();
     }
 }

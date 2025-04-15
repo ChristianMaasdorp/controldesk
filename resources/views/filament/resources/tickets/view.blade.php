@@ -258,6 +258,15 @@
                         @if($tab === 'attachments') border-primary-500 text-primary-500 @else text-gray-700 @endif">
                     {{ __('Attachments') }}
                 </button>
+                {{-- GitHub Tab --}}
+                @if(!is_null($githubCommits))
+                    <button wire:click="selectTab('github')"
+                            class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center
+                            gap-1 @if($tab === 'github') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                        <x-heroicon-o-code class="w-5 h-5"/> {{-- Added icon --}}
+                        {{ __('GitHub') }}
+                    </button>
+                @endif
             </div>
             @if($tab === 'comments')
                 @if($this->canSubmitComment())
@@ -432,6 +441,67 @@
             @if($tab === 'attachments')
                 <livewire:ticket.attachments :ticket="$record" />
             @endif
+            {{-- GitHub Tab Content --}}
+            <div class="w-full pt-5 @if($tab !== 'github') hidden @endif">
+                @if(!is_null($githubCommits))
+                    @if(empty($githubCommits))
+                        <div class="text-center text-gray-500 py-5">
+                            {{ __('No commits found for branch:') }} {{ $record->github_branch }}
+                        </div>
+                    @else
+                        <div class="flow-root">
+                            <ul role="list" class="-mb-8">
+                                @foreach($githubCommits as $commit)
+                                    <li>
+                                        <div class="relative pb-8">
+                                            @if(!$loop->last)
+                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                            @endif
+                                            <div class="relative flex space-x-3">
+                                                <div>
+                                                    <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
+                                                        <x-heroicon-s-code class="h-5 w-5 text-white" />
+                                                    </span>
+                                                </div>
+                                                <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                                    <div>
+                                                        <p class="text-sm text-gray-500">
+                                                            {{ $commit['author'] }} {{ __('committed') }}
+                                                            <a href="{{ 'https://github.com/jacquestrdx123/CibaRebuildSystem/commit/' . $commit['sha'] }}"
+                                                               target="_blank"
+                                                               class="font-medium text-gray-900 hover:underline">{{ substr($commit['sha'], 0, 7) }}</a>
+                                                        </p>
+                                                        <p class="text-sm text-gray-800 font-medium mt-1">{{ Str::limit(explode("\n", $commit['message'])[0], 80) }}</p>
+                                                        {{-- Optionally display changed files --}}
+                                                        {{-- @if(!empty($commit['files_changed']))
+                                                            <div class="mt-2 text-xs text-gray-600">
+                                                                <strong>Files changed:</strong>
+                                                                <ul>
+                                                                    @foreach($commit['files_changed'] as $file)
+                                                                        <li>{{ $file['filename'] }} ({{ $file['status'] }})</li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                        @endif --}}
+                                                    </div>
+                                                    <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                                        <time datetime="{{ $commit['date'] }}">{{ \Carbon\Carbon::parse($commit['date'])->diffForHumans() }}</time>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                @else
+                    {{-- This case should ideally not be reached if the tab button is hidden correctly --}}
+                     <div class="text-center text-gray-500 py-5">
+                        {{ __('GitHub commit data not available.') }}
+                    </div>
+                @endif
+            </div>
         </x-filament::card>
 
         <div class="md:w-1/3 w-full flex flex-col"></div>
