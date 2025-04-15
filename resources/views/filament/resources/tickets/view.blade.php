@@ -446,7 +446,7 @@
                 @if(!is_null($githubCommits))
                     @if(empty($githubCommits))
                         <div class="text-center text-gray-500 py-5">
-                            {{ __('No commits found for branch:') }} {{ $record->branch }}
+                            {{ __('No commits found for branch:') }} {{ $record->github_branch }}
                         </div>
                     @else
                         <div class="flow-root">
@@ -496,9 +496,14 @@
                         </div>
                     @endif
                 @else
-                    {{-- This case should ideally not be reached if the tab button is hidden correctly --}}
-                     <div class="text-center text-gray-500 py-5">
-                        {{ __('GitHub commit data not available.') }}
+                    <div class="text-center py-5">
+                        <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition ease-in-out duration-150 cursor-not-allowed">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            {{ __('Loading GitHub commits...') }}
+                        </div>
                     </div>
                 @endif
             </div>

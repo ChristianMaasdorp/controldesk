@@ -49,6 +49,7 @@ class ViewTicket extends ViewRecord implements HasForms
 
     protected GithubService $githubService;
 
+    // Using boot for dependency injection in Livewire components
     public function boot(GithubService $githubService): void
     {
         $this->githubService = $githubService;
@@ -60,22 +61,8 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->form->fill();
         $this->noteForm->fill();
 
-        // Fetch GitHub commits if a branch is associated
-        // Assuming the ticket model has a 'branch' attribute
-        if (!empty($this->record->branch)) {
-            try {
-                // Use the injected service instance
-                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->branch);
-            } catch (Exception $e) {
-                Log::error("Failed to fetch GitHub commits for ticket {$this->record->id}: " . $e->getMessage());
-                Notification::make()
-                    ->danger()
-                    ->title(__('GitHub Error'))
-                    ->body(__('Could not fetch commits for branch: ') . $this->record->branch)
-                    ->send();
-                $this->githubCommits = null; // Ensure it's null on error
-            }
-        }
+        // Remove GitHub commits fetching from mount method
+        // We'll fetch them only when the GitHub tab is selected
     }
 
     protected function getForms(): array
@@ -548,8 +535,20 @@ class ViewTicket extends ViewRecord implements HasForms
     {
         $this->tab = $tab;
 
-        // Use emit instead of dispatch for older Livewire versions
-        // $this->emit('tabChanged', $tab); // Emit might not be needed if using wire:click and conditional rendering
+        // Fetch GitHub commits when the GitHub tab is selected
+        if ($tab === 'github' && !empty($this->record->github_branch) && is_null($this->githubCommits)) {
+            try {
+                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->github_branch);
+            } catch (Exception $e) {
+                Log::error("Failed to fetch GitHub commits for ticket {$this->record->id} branch '{$this->record->github_branch}': " . $e->getMessage());
+                Notification::make()
+                    ->danger()
+                    ->title(__('GitHub Error'))
+                    ->body(__('Could not fetch commits for branch: ') . $this->record->github_branch . '. ' . __('Please check the branch name and API token.'))
+                    ->send();
+                $this->githubCommits = null; // Ensure it's null on error so the tab doesn't render
+            }
+        }
 
         // Mark notes as read when opening the notes tab if user is the responsible person or intended recipient
         if ($tab === 'notes' && (
