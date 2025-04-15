@@ -11,7 +11,7 @@ return new class extends Migration {
             if(Schema::hasColumn('tickets', 'estimation_hours')){
                 return;
             }else{
-                $table->integer('estimation_hours')->default(0)->after('status');
+                $table->integer('estimation_hours')->default(0);
             }
         });
     }
