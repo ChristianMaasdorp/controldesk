@@ -4,7 +4,7 @@ namespace App\Services;
 use Github\Client;
 
 class GithubService{
-    public function syncGithub($user){
+    public static function syncGithub($user){
 
         $client = new Client();
         $client->authenticate(config('github.token'), null, Client::AUTH_ACCESS_TOKEN);
