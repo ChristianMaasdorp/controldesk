@@ -442,71 +442,62 @@
                 <livewire:ticket.attachments :ticket="$record" />
             @endif
             {{-- GitHub Tab Content --}}
-            <div class="w-full pt-5 @if($tab !== 'github') hidden @endif">
-                @if(!is_null($githubCommits))
-                    @if(empty($githubCommits))
-                        <div class="text-center text-gray-500 py-5">
-                            {{ __('No commits found for branch:') }} {{ $record->github_branch }}
-                        </div>
-                    @else
-                        <div class="flow-root">
-                            <ul role="list" class="-mb-8">
-                                @foreach($githubCommits as $commit)
-                                    <li>
-                                        <div class="relative pb-8">
-                                            @if(!$loop->last)
-                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                                            @endif
-                                            <div class="relative flex space-x-3">
-                                                <div>
-                                                    <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
-                                                        <x-heroicon-s-code class="h-5 w-5 text-white" />
-                                                    </span>
-                                                </div>
-                                                <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+            @if($tab === 'github' && !empty($record->github_branch))
+                <div class="w-full pt-5">
+                    @if(!is_null($githubCommits))
+                        @if(empty($githubCommits))
+                            <div class="text-center text-gray-500 py-5">
+                                {{ __('No commits found for branch:') }} {{ $record->github_branch }}
+                            </div>
+                        @else
+                            <div class="flow-root">
+                                <ul role="list" class="-mb-8">
+                                    @foreach($githubCommits as $commit)
+                                        <li>
+                                            <div class="relative pb-8">
+                                                @if(!$loop->last)
+                                                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                                @endif
+                                                <div class="relative flex space-x-3">
                                                     <div>
-                                                        <p class="text-sm text-gray-500">
-                                                            {{ $commit['author'] }} {{ __('committed') }}
-                                                            <a href="{{ 'https://github.com/jacquestrdx123/CibaRebuildSystem/commit/' . $commit['sha'] }}"
-                                                               target="_blank"
-                                                               class="font-medium text-gray-900 hover:underline">{{ substr($commit['sha'], 0, 7) }}</a>
-                                                        </p>
-                                                        <p class="text-sm text-gray-800 font-medium mt-1">{{ Str::limit(explode("\n", $commit['message'])[0], 80) }}</p>
-                                                        {{-- Optionally display changed files --}}
-                                                        {{-- @if(!empty($commit['files_changed']))
-                                                            <div class="mt-2 text-xs text-gray-600">
-                                                                <strong>Files changed:</strong>
-                                                                <ul>
-                                                                    @foreach($commit['files_changed'] as $file)
-                                                                        <li>{{ $file['filename'] }} ({{ $file['status'] }})</li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                        @endif --}}
+                                                        <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
+                                                            <x-heroicon-s-code class="h-5 w-5 text-white" />
+                                                        </span>
                                                     </div>
-                                                    <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                        <time datetime="{{ $commit['date'] }}">{{ \Carbon\Carbon::parse($commit['date'])->diffForHumans() }}</time>
+                                                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                                        <div>
+                                                            <p class="text-sm text-gray-500">
+                                                                {{ $commit['author'] }} {{ __('committed') }}
+                                                                <a href="{{ 'https://github.com/jacquestrdx123/CibaRebuildSystem/commit/' . $commit['sha'] }}"
+                                                                   target="_blank"
+                                                                   class="font-medium text-gray-900 hover:underline">{{ substr($commit['sha'], 0, 7) }}</a>
+                                                            </p>
+                                                            <p class="text-sm text-gray-800 font-medium mt-1">{{ Str::limit(explode("\n", $commit['message'])[0], 80) }}</p>
+                                                        </div>
+                                                        <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                                            <time datetime="{{ $commit['date'] }}">{{ \Carbon\Carbon::parse($commit['date'])->diffForHumans() }}</time>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-5">
+                            <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition ease-in-out duration-150 cursor-not-allowed">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {{ __('Loading GitHub commits...') }}
+                            </div>
                         </div>
                     @endif
-                @else
-                    <div class="text-center py-5">
-                        <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-primary-500 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition ease-in-out duration-150 cursor-not-allowed">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {{ __('Loading GitHub commits...') }}
-                        </div>
-                    </div>
-                @endif
-            </div>
+                </div>
+            @endif
         </x-filament::card>
 
         <div class="md:w-1/3 w-full flex flex-col"></div>
