@@ -259,7 +259,7 @@
                     {{ __('Attachments') }}
                 </button>
                 {{-- GitHub Tab --}}
-                @if(!is_null($githubCommits))
+                @if(!empty($record->github_branch))
                     <button wire:click="selectTab('github')"
                             class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center
                             gap-1 @if($tab === 'github') border-primary-500 text-primary-500 @else text-gray-700 @endif">
