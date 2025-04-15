@@ -111,6 +111,13 @@ class TicketResource extends Resource
                                                 fn($livewire) => !($livewire instanceof CreateRecord) ? 10 : 12
                                             )
                                             ->maxLength(255),
+                                        Forms\Components\TextInput::make('branch')
+                                            ->label(__('Github Branch'))
+                                            ->required()
+                                            ->columnSpan(
+                                                fn($livewire) => !($livewire instanceof CreateRecord) ? 10 : 12
+                                            )
+                                            ->maxLength(255),
                                     ]),
 
                                 Forms\Components\Select::make('owner_id')

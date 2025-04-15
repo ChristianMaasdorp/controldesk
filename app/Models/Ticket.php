@@ -26,6 +26,7 @@ class Ticket extends Model implements HasMedia
         'responsible_id',
         'status_id',
         'project_id',
+        'branch',
         'code',
         'order',
         'type_id',
