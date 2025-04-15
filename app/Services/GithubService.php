@@ -15,12 +15,15 @@ class GithubService{
 // Get commits for a branch
         foreach($branches as $branch){
             $exports[$branch['name']]['commits'] = $client->repo()->commits()->all('jacquestrdx123', 'CibaRebuildSystem', ['sha' =>$branch['name']]);
+
         }
 
-
-        foreach ($exports as $export){
-            foreach($export['commits'] as $commit){
-                dd($commit);
+        foreach ($exports as $branch=> $export){
+            foreach($export['commits'] as $index=> $exportCommits){
+                foreach($exportCommits as $exportCommit){
+                    $exportCommit = $client->repo()->commits()->show('jacquestrdx123', 'CibaRebuildSystem', $exportCommit['sha']);
+                    $exports[$branch]['commits'][$exportCommit['sha']]['commits'] = $exportCommit;
+                }
             }
         }
 
