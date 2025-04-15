@@ -275,4 +275,9 @@ class Ticket extends Model implements HasMedia
         return $hours + ($minutes / 60);
     }
 
+    public function githubCommits()
+    {
+        return $this->hasMany(TicketGithubCommit::class)->orderBy('committed_at', 'desc');
+    }
+
 }

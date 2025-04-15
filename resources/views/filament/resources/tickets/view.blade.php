@@ -444,6 +444,13 @@
             {{-- GitHub Tab Content --}}
             @if($tab === 'github' && !empty($record->branch))
                 <div class="w-full pt-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">{{ __('GitHub Commits') }}</h3>
+                        <button wire:click="refreshGithubCommits" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <x-heroicon-s-refresh class="h-4 w-4 mr-1" />
+                            {{ __('Refresh Commits') }}
+                        </button>
+                    </div>
                     @if(!is_null($githubCommits))
                         @if(empty($githubCommits))
                             <div class="text-center text-gray-500 py-5">

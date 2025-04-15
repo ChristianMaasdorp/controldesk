@@ -535,16 +535,37 @@ class ViewTicket extends ViewRecord implements HasForms
     {
         $this->tab = $tab;
 
-        // Fetch GitHub commits when the GitHub tab is selected
-        if ($tab === 'github' && !empty($this->record->github_branch) && is_null($this->githubCommits)) {
+        // Fetch GitHub commits from the database when the GitHub tab is selected
+        if ($tab === 'github' && !empty($this->record->branch)) {
             try {
-                $this->githubCommits = $this->githubService->getCommitsForBranch($this->record->github_branch);
+                // Get commits from the database
+                $this->githubCommits = $this->record->githubCommits()
+                    ->orderBy('committed_at', 'desc')
+                    ->get()
+                    ->map(function ($commit) {
+                        return [
+                            'sha' => $commit->sha,
+                            'author' => $commit->author,
+                            'message' => $commit->message,
+                            'date' => $commit->committed_at->format('Y-m-d H:i:s'),
+                        ];
+                    })
+                    ->toArray();
+
+                // If no commits are found in the database, show a notification
+                if (empty($this->githubCommits)) {
+                    Notification::make()
+                        ->info()
+                        ->title(__('No GitHub Commits'))
+                        ->body(__('No commits found for this branch. The commits will be fetched by the background task.'))
+                        ->send();
+                }
             } catch (Exception $e) {
-                Log::error("Failed to fetch GitHub commits for ticket {$this->record->id} branch '{$this->record->github_branch}': " . $e->getMessage());
+                Log::error("Failed to fetch GitHub commits from database for ticket {$this->record->id} branch '{$this->record->branch}': " . $e->getMessage());
                 Notification::make()
                     ->danger()
-                    ->title(__('GitHub Error'))
-                    ->body(__('Could not fetch commits for branch: ') . $this->record->github_branch . '. ' . __('Please check the branch name and API token.'))
+                    ->title(__('Database Error'))
+                    ->body(__('Could not fetch commits from database for branch: ') . $this->record->branch)
                     ->send();
                 $this->githubCommits = null; // Ensure it's null on error so the tab doesn't render
             }
@@ -568,6 +589,75 @@ class ViewTicket extends ViewRecord implements HasForms
             // $this->record->refresh();
         }
     }
+
+    /**
+     * Manually refresh GitHub commits for the current ticket
+     */
+    public function refreshGithubCommits(): void
+    {
+        if (empty($this->record->branch)) {
+            Notification::make()
+                ->warning()
+                ->title(__('No Branch'))
+                ->body(__('This ticket does not have a GitHub branch associated with it.'))
+                ->send();
+            return;
+        }
+
+        try {
+            // Show loading notification
+            Notification::make()
+                ->info()
+                ->title(__('Refreshing Commits'))
+                ->body(__('Fetching commits from GitHub...'))
+                ->send();
+
+            // Fetch commits from GitHub
+            $commits = $this->githubService->getCommitsForBranch($this->record->branch);
+
+            // Store commits in the database
+            foreach ($commits as $commit) {
+                $this->record->githubCommits()->updateOrCreate(
+                    ['sha' => $commit['sha']],
+                    [
+                        'author' => $commit['author'],
+                        'message' => $commit['message'],
+                        'committed_at' => $commit['date'],
+                        'branch' => $this->record->branch,
+                    ]
+                );
+            }
+
+            // Get commits from the database
+            $this->githubCommits = $this->record->githubCommits()
+                ->orderBy('committed_at', 'desc')
+                ->get()
+                ->map(function ($commit) {
+                    return [
+                        'sha' => $commit->sha,
+                        'author' => $commit->author,
+                        'message' => $commit->message,
+                        'date' => $commit->committed_at->format('Y-m-d H:i:s'),
+                    ];
+                })
+                ->toArray();
+
+            // Show success notification
+            Notification::make()
+                ->success()
+                ->title(__('Commits Refreshed'))
+                ->body(__('Successfully refreshed GitHub commits.'))
+                ->send();
+        } catch (Exception $e) {
+            Log::error("Failed to refresh GitHub commits for ticket {$this->record->id} branch '{$this->record->branch}': " . $e->getMessage());
+            Notification::make()
+                ->danger()
+                ->title(__('GitHub Error'))
+                ->body(__('Could not fetch commits for branch: ') . $this->record->branch . '. ' . __('Please check the branch name and API token.'))
+                ->send();
+        }
+    }
+
     public function submitNote(): void
     {
         $data = $this->noteForm->getState();

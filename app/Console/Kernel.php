@@ -16,6 +16,12 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // Refresh GitHub commits for all tickets daily
+        $schedule->command('github:refresh-commits')
+                ->daily()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/github-commits-refresh.log'));
     }
 
     /**
