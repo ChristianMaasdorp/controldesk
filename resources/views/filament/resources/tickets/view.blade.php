@@ -259,7 +259,7 @@
                     {{ __('Attachments') }}
                 </button>
                 {{-- GitHub Tab --}}
-                @if(!empty($record->github_branch))
+                @if(isset($record->branch) && $record->branch !== null && $record->branch !== '')
                     <button wire:click="selectTab('github')"
                             class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center
                             gap-1 @if($tab === 'github') border-primary-500 text-primary-500 @else text-gray-700 @endif">
@@ -442,12 +442,12 @@
                 <livewire:ticket.attachments :ticket="$record" />
             @endif
             {{-- GitHub Tab Content --}}
-            @if($tab === 'github' && !empty($record->github_branch))
+            @if($tab === 'github' && !empty($record->branch))
                 <div class="w-full pt-5">
                     @if(!is_null($githubCommits))
                         @if(empty($githubCommits))
                             <div class="text-center text-gray-500 py-5">
-                                {{ __('No commits found for branch:') }} {{ $record->github_branch }}
+                                {{ __('No commits found for branch:') }} {{ $record->branch }}
                             </div>
                         @else
                             <div class="flow-root">
