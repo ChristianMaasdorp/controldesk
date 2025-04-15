@@ -11,7 +11,7 @@ return new class extends Migration {
             if(Schema::hasColumn('tickets', 'estimation_start_date')){
                 return;
             }else{
-                $table->integer('estimation_start_date')->default(0);
+                $table->dateTime('estimation_start_date')->nullable();
             }
         });
     }
