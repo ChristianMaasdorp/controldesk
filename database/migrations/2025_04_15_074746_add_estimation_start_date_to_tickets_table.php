@@ -19,7 +19,9 @@ return new class extends Migration {
     public function down()
     {
         Schema::table('tickets', function (Blueprint $table) {
-            //
+            if(Schema::hasColumn('tickets', 'estimation_start_date')){
+                $table->dropColumn('estimation_start_date');
+            }
         });
     }
 };
