@@ -23,6 +23,7 @@ class GithubService{
                 foreach($exportCommits as $exportCommit){
                     $exportCommit = $client->repo()->commits()->show('jacquestrdx123', 'CibaRebuildSystem', $exportCommit['sha']);
                     $exports[$branch]['commits'][$exportCommit['sha']]['commits'] = $exportCommit;
+                    echo json_encode($exportCommit);
                 }
             }
         }
