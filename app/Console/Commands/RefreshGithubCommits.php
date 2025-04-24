@@ -68,6 +68,7 @@ class RefreshGithubCommits extends Command
             $this->info("Processing ticket #{$ticket->id} with branch: {$ticket->branch}");
 
             try {
+                $this->info("Fetching commits for ticket #{$ticket->id} with URL: {$ticket->project->github_repository_url}");
                 // Fetch commits from GitHub
                 $commits = $this->githubService->getCommitsForBranch($ticket->branch, $ticket->project);
 
