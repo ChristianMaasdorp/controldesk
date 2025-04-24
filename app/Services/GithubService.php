@@ -3,6 +3,7 @@
 namespace App\Services;
 use Github\Client;
 use App\Models\Project;
+use Illuminate\Support\Facades\Log;
 
 class GithubService{
     public static function syncGithub($user){
@@ -24,6 +25,8 @@ class GithubService{
         $path = trim($parts['path'], '/');
         [$owner, $repo] = explode('/', $path);
 
+        Log::info("Owner: " . $owner);
+        Log::info("Repo: " . $repo);
         $commits = $client->repo()->commits()->all($owner, $repo, ['sha' => $branchName]);
 
         $commitDetails = [];
