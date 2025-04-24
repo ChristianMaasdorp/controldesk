@@ -26,20 +26,13 @@ class GithubService{
         Log::info("Project: " . $project);
 
         // Verify authentication
-        try {
-            $response = $client->getHttpClient()->get('user');
-            $user = json_decode($response->getBody()->getContents(), true);
-            Log::info("Successfully authenticated as: " . $user['login']);
-        } catch (\Exception $e) {
-            Log::error("GitHub authentication failed: " . $e->getMessage());
-            throw new \Exception("Failed to authenticate with GitHub: " . $e->getMessage());
-        }
-
         // Extract owner and repo from the repository URL
         $repoUrl = $project->github_repository_url;
         $parts = parse_url($repoUrl);
         $path = trim($parts['path'], '/');
         [$owner, $repo] = explode('/', $path);
+        $repositories = $client->repositories()->all();
+        Log::info("Repositories: " . json_encode($repositories),JSON_PRETTY_PRINT);
 
         Log::info("Attempting to fetch commits for repository", [
             'owner' => $owner,
