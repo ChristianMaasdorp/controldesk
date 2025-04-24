@@ -32,7 +32,7 @@ class GithubService{
         $path = trim($parts['path'], '/');
         [$owner, $repo] = explode('/', $path);
         $repositories = $client->repositories()->all();
-        Log::info("Repositories: " . json_encode($repositories),JSON_PRETTY_PRINT);
+        Log::info("Repositories: " . json_encode($repositories,JSON_PRETTY_PRINT));
 
         Log::info("Attempting to fetch commits for repository", [
             'owner' => $owner,
