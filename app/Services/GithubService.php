@@ -19,6 +19,21 @@ class GithubService{
 
         $client = new Client();
         $client->authenticate($project->github_api_key, null, Client::AUTH_ACCESS_TOKEN);
+        Log::info("Authenticated with GitHub API key");
+        Log::info("Project ID: " . $project->id);
+        Log::info("Project URL: " . $project->github_repository_url);
+        Log::info("Branch Name: " . $branchName);
+        Log::info("Project: " . $project);
+
+        // Verify authentication
+        try {
+            $response = $client->getHttpClient()->get('user');
+            $user = json_decode($response->getBody()->getContents(), true);
+            Log::info("Successfully authenticated as: " . $user['login']);
+        } catch (\Exception $e) {
+            Log::error("GitHub authentication failed: " . $e->getMessage());
+            throw new \Exception("Failed to authenticate with GitHub: " . $e->getMessage());
+        }
 
         // Extract owner and repo from the repository URL
         $repoUrl = $project->github_repository_url;
