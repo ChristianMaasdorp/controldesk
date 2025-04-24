@@ -604,6 +604,15 @@ class ViewTicket extends ViewRecord implements HasForms
             return;
         }
 
+        if (empty($this->record->project->github_repository_url) || empty($this->record->project->github_api_key)) {
+            Notification::make()
+                ->warning()
+                ->title(__('GitHub Not Configured'))
+                ->body(__('This project does not have GitHub repository URL or API key configured.'))
+                ->send();
+            return;
+        }
+
         try {
             // Show loading notification
             Notification::make()
@@ -613,7 +622,7 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->send();
 
             // Fetch commits from GitHub
-            $commits = $this->githubService->getCommitsForBranch($this->record->branch);
+            $commits = $this->githubService->getCommitsForBranch($this->record->branch, $this->record->project);
 
             // Store commits in the database
             foreach ($commits as $commit) {
@@ -648,12 +657,12 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->title(__('Commits Refreshed'))
                 ->body(__('Successfully refreshed GitHub commits.'))
                 ->send();
-        } catch (Exception $e) {
-            Log::error("Failed to refresh GitHub commits for ticket {$this->record->id} branch '{$this->record->branch}': " . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch GitHub commits for ticket {$this->record->id} branch '{$this->record->branch}': " . $e->getMessage());
             Notification::make()
                 ->danger()
-                ->title(__('GitHub Error'))
-                ->body(__('Could not fetch commits for branch: ') . $this->record->branch . '. ' . __('Please check the branch name and API token.'))
+                ->title(__('Error'))
+                ->body(__('Failed to fetch GitHub commits: ') . $e->getMessage())
                 ->send();
         }
     }

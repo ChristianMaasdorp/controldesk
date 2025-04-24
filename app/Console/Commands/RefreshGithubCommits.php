@@ -51,10 +51,15 @@ class RefreshGithubCommits extends Command
     {
         $this->info('Starting GitHub commits refresh...');
 
-        $tickets = Ticket::whereNotNull('branch')->get();
+        $tickets = Ticket::whereNotNull('branch')
+            ->whereHas('project', function ($query) {
+                $query->whereNotNull('github_repository_url')
+                    ->whereNotNull('github_api_key');
+            })
+            ->get();
         $count = $tickets->count();
 
-        $this->info("Found {$count} tickets with branch information.");
+        $this->info("Found {$count} tickets with branch information and configured GitHub repositories.");
 
         $successCount = 0;
         $errorCount = 0;
@@ -64,7 +69,7 @@ class RefreshGithubCommits extends Command
 
             try {
                 // Fetch commits from GitHub
-                $commits = $this->githubService->getCommitsForBranch($ticket->branch);
+                $commits = $this->githubService->getCommitsForBranch($ticket->branch, $ticket->project);
 
                 // Store commits in the database
                 foreach ($commits as $commit) {

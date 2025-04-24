@@ -18,7 +18,7 @@ class Project extends Model implements HasMedia
 
     protected $fillable = [
         'name', 'description', 'status_id', 'owner_id', 'ticket_prefix',
-        'status_type', 'type'
+        'status_type', 'type', 'github_repository_url', 'github_api_key'
     ];
 
     protected $appends = [

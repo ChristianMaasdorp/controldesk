@@ -2,46 +2,34 @@
 
 namespace App\Services;
 use Github\Client;
+use App\Models\Project;
 
 class GithubService{
     public static function syncGithub($user){
-
-        $client = new Client();
-        $client->authenticate(config('github.token'), null, Client::AUTH_ACCESS_TOKEN);
-// Get list of branches
-        $branches = $client->repo()->branches('jacquestrdx123', 'CibaRebuildSystem');
-
-        $exports=[];
-// Get commits for a branch
-        foreach($branches as $branch){
-            $exports[$branch['name']]['commits'] = $client->repo()->commits()->all('jacquestrdx123', 'CibaRebuildSystem', ['sha' =>$branch['name']]);
-
-        }
-
-        foreach ($exports as $branch=> $export){
-            foreach($export['commits'] as $index=> $exportCommit){
-                $exportCommit = $client->repo()->commits()->show('jacquestrdx123', 'CibaRebuildSystem', $exportCommit['sha']);
-                $exports[$branch]['commits'][$exportCommit['sha']]['commits'] = $exportCommit;
-                echo json_encode($exportCommit);
-            }
-        }
-
+        // This method is not used, can be removed if needed
     }
 
-    public static function getCommitsForBranch(string $branchName): array
+    public static function getCommitsForBranch(string $branchName, Project $project): array
     {
+        if (empty($project->github_repository_url) || empty($project->github_api_key)) {
+            throw new \Exception('GitHub repository URL or API key not configured for this project');
+        }
+
         $client = new Client();
-        $client->authenticate(config('github.token'), null, Client::AUTH_ACCESS_TOKEN);
+        $client->authenticate($project->github_api_key, null, Client::AUTH_ACCESS_TOKEN);
 
-        $username = 'jacquestrdx123';
-        $repo = 'CibaRebuildSystem';
+        // Extract owner and repo from the repository URL
+        $repoUrl = $project->github_repository_url;
+        $parts = parse_url($repoUrl);
+        $path = trim($parts['path'], '/');
+        [$owner, $repo] = explode('/', $path);
 
-        $commits = $client->repo()->commits()->all($username, $repo, ['sha' => $branchName]);
+        $commits = $client->repo()->commits()->all($owner, $repo, ['sha' => $branchName]);
 
         $commitDetails = [];
 
         foreach ($commits as $commit) {
-            $commitData = $client->repo()->commits()->show($username, $repo, $commit['sha']);
+            $commitData = $client->repo()->commits()->show($owner, $repo, $commit['sha']);
 
             $commitDetails[] = [
                 'sha' => $commitData['sha'],
