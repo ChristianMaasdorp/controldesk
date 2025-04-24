@@ -475,7 +475,7 @@
                                                         <div>
                                                             <p class="text-sm text-gray-500">
                                                                 {{ $commit['author'] }} {{ __('committed') }}
-                                                                <a href="{{ $ticket->project->github_repository_url . '/commit/' . $commit['sha'] }}"
+                                                                <a href="{{ $this->ticket->project->github_repository_url . '/commit/' . $commit['sha'] }}"
                                                                    target="_blank"
                                                                    class="font-medium text-gray-900 hover:underline">{{ substr($commit['sha'], 0, 7) }}</a>
                                                             </p>
