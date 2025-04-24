@@ -5,6 +5,7 @@ use Github\Client;
 use App\Models\Project;
 use Illuminate\Support\Facades\Log;
 use Github\Exception\RuntimeException;
+use App\Models\Ticket;
 
 class GithubService{
     public static function syncGithub($user){
@@ -95,6 +96,47 @@ class GithubService{
                 'project_id' => $project->id
             ]);
             throw new \Exception("GitHub API error: " . $errorMessage);
+        }
+    }
+
+    public static function createBranchFromTicket(Ticket $ticket): array
+    {
+        if (empty($ticket->project->github_repository_url) || empty($ticket->project->github_api_key)) {
+            throw new \Exception('GitHub repository URL or API key not configured for this project');
+        }
+
+        $client = new Client();
+        $client->authenticate($ticket->project->github_api_key, null, Client::AUTH_ACCESS_TOKEN);
+
+        // Extract owner and repo from the repository URL
+        $repoUrl = $ticket->project->github_repository_url;
+        $parts = parse_url($repoUrl);
+        $path = trim($parts['path'], '/');
+        [$owner, $repo] = explode('/', $path);
+
+        try {
+            // Get the default branch (usually 'main' or 'master')
+            $repository = $client->repo()->show($owner, $repo);
+            $defaultBranch = $repository['default_branch'];
+
+            // Create new branch from the default branch
+            $newBranch = $ticket->code;
+            $ref = $client->git()->references()->show($owner, $repo, 'heads/' . $defaultBranch);
+            $client->git()->references()->create($owner, $repo, [
+                'ref' => 'refs/heads/' . $newBranch,
+                'sha' => $ref['object']['sha']
+            ]);
+
+            Log::info("Created new branch '{$newBranch}' from '{$defaultBranch}' for ticket {$ticket->code}");
+
+            return [
+                'success' => true,
+                'branch' => $newBranch,
+                'message' => "Successfully created branch '{$newBranch}'"
+            ];
+        } catch (\Exception $e) {
+            Log::error("Failed to create branch for ticket {$ticket->code}: " . $e->getMessage());
+            throw new \Exception("Failed to create GitHub branch: " . $e->getMessage());
         }
     }
 }
