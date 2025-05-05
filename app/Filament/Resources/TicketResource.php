@@ -28,6 +28,7 @@ use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Columns\Column;
 use Illuminate\Support\Collection;
+use Mockery\Generator\StringManipulation\Pass\Pass;
 
 class TicketResource extends Resource
 {
@@ -384,6 +385,18 @@ class TicketResource extends Resource
                     ->label(__('Priority'))
                     ->multiple()
                     ->options(fn() => TicketPriority::all()->pluck('name', 'id')->toArray()),
+
+                Tables\Filters\Filter::make('status_id')
+                    ->label(__('Exclude'))
+                    ->form([
+                        Select::make('status_id')
+                            ->label(__('Exclude'))
+                            ->options(fn() => TicketStatus::pluck('name', 'id')->toArray())
+                            ->multiple()
+                    ])
+                    ->query(function ($query, $data) {
+                        return $query->whereNotIn('status_id', $data['status_id']);
+                    })
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
