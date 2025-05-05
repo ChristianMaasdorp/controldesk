@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\TicketResource\Pages;
 use App\Filament\Resources\TicketResource\RelationManagers;
+use Filament\Tables\Actions\BulkAction;
 use App\Models\Epic;
 use App\Models\Project;
 use App\Models\Ticket;
@@ -13,6 +14,8 @@ use App\Models\TicketStatus;
 use App\Models\TicketType;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Filament\Resources\Form;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Resources\Pages\EditRecord;
@@ -24,6 +27,7 @@ use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Columns\Column;
+use Illuminate\Support\Collection;
 
 class TicketResource extends Resource
 {
@@ -298,7 +302,7 @@ class TicketResource extends Resource
                 ->label(__('Status'))
                 ->formatStateUsing(fn($record) => new HtmlString('
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="filament-tables-color-column relative flex h-6 w-6 rounded-md"
+                                <span class="relative flex w-6 h-6 rounded-md filament-tables-color-column"
                                     style="background-color: ' . $record->status->color . '"></span>
                                 <span>' . $record->status->name . '</span>
                             </div>
@@ -318,7 +322,7 @@ class TicketResource extends Resource
                 ->label(__('Priority'))
                 ->formatStateUsing(fn($record) => new HtmlString('
                             <div class="flex items-center gap-2 mt-1">
-                                <span class="filament-tables-color-column relative flex h-6 w-6 rounded-md"
+                                <span class="relative flex w-6 h-6 rounded-md filament-tables-color-column"
                                     style="background-color: ' . $record->priority->color . '"></span>
                                 <span>' . $record->priority->name . '</span>
                             </div>
@@ -425,6 +429,33 @@ class TicketResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
+                BulkAction::make('assignUser')
+                ->label('Assign to User')
+                ->icon('heroicon-o-user')
+                ->form([
+                    Select::make('user_id')
+                        ->label('User')
+                        ->options(User::pluck('name', 'id')->toArray())
+                        ->searchable()
+                        ->required(),
+                ])
+                ->action(function (Collection $records, array $data): void {
+                    // dd($data);  Dump form input to teest data requested
+                    foreach ($records as $record) {
+                        $record->update([
+                            'user_id' => $data['user_id'],
+                            'responsible_id' => $data['user_id'],
+                        ]);
+                    }
+                })
+                ->deselectRecordsAfterCompletion()
+
+                ->after(function(){
+                    Notification::make()
+                    ->title('Assigned successfully')
+                    ->success()
+                    ->send();
+                }),
                 ExportBulkAction::make('Export Selected')
                     ->exports([
                         ExcelExport::make('Clean Data')
