@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\TicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,5 +19,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/api/tickets',[\App\Http\Controllers\Api\TicketController::class,'store'])->name('api.tickets.store');
-Route::get('/api/tickets/{id}',[\App\Http\Controllers\Api\TicketController::class,'get'])->name('api.tickets.get');
+// Public routes (if any)
+// Route::post('/login', [AuthController::class, 'login']);
+
+// Protected routes
+Route::prefix('tickets')->group(function () {
+    Route::post('/', [TicketController::class, 'store'])->name('api.tickets.store');
+    Route::get('/{id}', [TicketController::class, 'get'])->name('api.tickets.get');
+});
