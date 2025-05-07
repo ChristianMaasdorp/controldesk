@@ -18,4 +18,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/api/tickets',[\App\Http\Controllers\Api\TicketController::class,'store']);
+Route::post('/api/tickets',[\App\Http\Controllers\Api\TicketController::class,'store'])->name('api.tickets.store');
+Route::get('/api/tickets/{id}',[\App\Http\Controllers\Api\TicketController::class,'get'])->name('api.tickets.get');

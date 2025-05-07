@@ -20,4 +20,13 @@ class TicketController extends Controller
             'ticket' => $ticket
         ], 201);
     }
+
+    public function get($id)
+    {
+        // Retrieve the ticket by ID
+        $ticket = Ticket::findOrFail($id);
+        return response()->json([
+            'ticket' => $ticket
+        ]);
+    }
 }
