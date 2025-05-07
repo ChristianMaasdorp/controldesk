@@ -20,9 +20,26 @@ class Ticket extends Model implements HasMedia
     use HasFactory, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
-        'name', 'content', 'owner_id', 'responsible_id',
-        'status_id', 'project_id', 'code', 'order', 'type_id',
-        'priority_id', 'estimation', 'epic_id', 'sprint_id'
+        'name',
+        'content',
+        'owner_id',
+        'responsible_id',
+        'status_id',
+        'project_id',
+        'branch',
+        'code',
+        'order',
+        'type_id',
+        'priority_id',
+        'estimation_hours',
+        'estimation_minutes',
+        'estimation_start_date',
+        'epic_id',
+        'sprint_id'
+    ];
+
+    protected $casts = [
+        'estimation_start_date' => 'datetime',
     ];
 
     public static function boot()
@@ -51,15 +68,24 @@ class Ticket extends Model implements HasMedia
 
             // Ticket activity based on status
             $oldStatus = $old->status_id;
-            if ($oldStatus != $item->status_id) {
+            $oldResponsible = $old->responsible_id;
+
+            // Create activity if status changes or responsible changes
+            if ($oldStatus != $item->status_id || $oldResponsible != $item->responsible_id) {
                 TicketActivity::create([
                     'ticket_id' => $item->id,
                     'old_status_id' => $oldStatus,
                     'new_status_id' => $item->status_id,
+                    'old_responsible_id' => $oldResponsible,
+                    'new_responsible_id' => $item->responsible_id,
                     'user_id' => auth()->user()->id
                 ]);
-                foreach ($item->watchers as $user) {
-                    $user->notify(new TicketStatusUpdated($item));
+
+                // Only send notifications for status changes
+                if ($oldStatus != $item->status_id) {
+                    foreach ($item->watchers as $user) {
+                        $user->notify(new TicketStatusUpdated($item));
+                    }
                 }
             }
 
@@ -221,4 +247,37 @@ class Ticket extends Model implements HasMedia
             get: fn() => $this->estimationProgress
         );
     }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(TicketNote::class, 'ticket_id', 'id');
+    }
+
+    public function unreadNotesCount(): Attribute
+    {
+        return new Attribute(
+            get: function () {
+                if ($this->responsible_id !== auth()->user()->id) {
+                    return 0;
+                }
+
+                return $this->notes()
+                    ->where('is_read', false)
+                    ->count();
+            }
+        );
+    }
+
+    public function getTotalEstimationAttribute()
+    {
+        $hours = $this->estimation_hours ?? 0;
+        $minutes = $this->estimation_minutes ?? 0;
+        return $hours + ($minutes / 60);
+    }
+
+    public function githubCommits()
+    {
+        return $this->hasMany(TicketGithubCommit::class)->orderBy('committed_at', 'desc');
+    }
+
 }

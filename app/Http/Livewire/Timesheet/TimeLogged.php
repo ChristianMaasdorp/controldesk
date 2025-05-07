@@ -38,9 +38,14 @@ class TimeLogged extends Component implements HasTable
                 ->searchable(),
 
             Tables\Columns\TextColumn::make('value')
-                ->label(__('Hours'))
+                ->label(__('Time'))
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->formatStateUsing(function ($state) {
+                    $hours = floor($state);
+                    $minutes = round(($state - $hours) * 60);
+                    return sprintf('%dh %dm', $hours, $minutes);
+                }),
             Tables\Columns\TextColumn::make('comment')
                 ->label(__('Comment'))
                 ->limit(50)

@@ -14,31 +14,60 @@ use Illuminate\Support\Facades\DB;
 
 class WeeklyReport extends BarChartWidget
 {
-    protected int|string|array $columnSpan = [
-        'sm' => 1,
-        'md' => 6,
-        'lg' => 3
-    ];
+    // Set to take up 1 column (left side)
+    protected int|string|array $columnSpan = 1;
 
+    // Set a high sort order to appear first
+    protected static ?int $sort = 1;
+
+    // Property to store the selected user ID
+    public $selectedUserId = null;
+
+    // Match the parent class's type declaration
+    public ?string $filter = null;
+
+    // Listen for user changes from parent
+    protected $listeners = ['userChanged' => 'onUserChanged'];
+
+    // Move the filter initialization to the constructor but AFTER parent constructor
     public function __construct($id = null)
     {
-        $weekDaysData = $this->getWeekStartAndFinishDays();
+        parent::__construct($id);
 
+        // Set the filter after parent is fully initialized
+        $weekDaysData = $this->getWeekStartAndFinishDays();
         $this->filter = $weekDaysData['weekStartDate'] . ' - ' . $weekDaysData['weekEndDate'];
 
-        parent::__construct($id);
+        // Default to current user
+        $this->selectedUserId = auth()->id();
+    }
+
+    // Called when the user selection changes
+    public function onUserChanged($userId): void
+    {
+        $this->selectedUserId = $userId;
+
+        // Force chart to refresh with new data
+        if (method_exists($this, 'updateChartData')) {
+            $this->updateChartData();
+        }
     }
 
     protected function getHeading(): string
     {
-        return __('Weekly logged time');
+        $user = $this->getUserToDisplay();
+        return __('Weekly logged time') . ($user->id !== auth()->id() ? ' - ' . $user->name : '');
     }
 
+    // Rest of the methods remain the same
+    // ... (include the rest of the existing methods)
     protected function getData(): array
     {
         $weekDaysData = explode(' - ', $this->filter);
 
-        $collection = $this->filter(auth()->user(), [
+        $user = $this->getUserToDisplay();
+
+        $collection = $this->filter($user, [
             'year' => null,
             'weekStartDate' => $weekDaysData[0],
             'weekEndDate' => $weekDaysData[1]
@@ -63,6 +92,21 @@ class WeeklyReport extends BarChartWidget
             ],
             'labels' => $dates,
         ];
+    }
+
+    // Get the user whose data should be displayed
+    protected function getUserToDisplay(): User
+    {
+        // Get selected user when available
+        if (!empty($this->selectedUserId)) {
+            $selectedUser = User::find($this->selectedUserId);
+            if ($selectedUser) {
+                return $selectedUser;
+            }
+        }
+
+        // Default to current user
+        return auth()->user();
     }
 
     protected function getFilters(): ?array

@@ -11,7 +11,12 @@ class TicketActivity extends Model
     use HasFactory;
 
     protected $fillable = [
-        'ticket_id', 'old_status_id', 'new_status_id', 'user_id'
+        'ticket_id',
+        'old_status_id',
+        'new_status_id',
+        'user_id',
+        'old_responsible_id',
+        'new_responsible_id'
     ];
 
     public function ticket(): BelongsTo
@@ -32,5 +37,15 @@ class TicketActivity extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function oldResponsible(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'old_responsible_id', 'id');
+    }
+
+    public function newResponsible(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'new_responsible_id', 'id');
     }
 }
