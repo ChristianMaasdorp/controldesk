@@ -22,7 +22,8 @@ class Project extends Model implements HasMedia
     ];
 
     protected $appends = [
-        'cover'
+        'cover',
+        'brs_document'
     ];
 
     public function owner(): BelongsTo
@@ -131,5 +132,21 @@ class Project extends Model implements HasMedia
                 return null;
             }
         );
+    }
+
+    public function brsDocument(): Attribute
+    {
+        return new Attribute(
+            get: fn() => $this->getFirstMediaUrl('brs_document')
+        );
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')
+            ->singleFile();
+            
+        $this->addMediaCollection('brs_document')
+            ->singleFile();
     }
 }

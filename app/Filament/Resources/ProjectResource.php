@@ -18,6 +18,7 @@ use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectResource extends Resource
@@ -54,6 +55,7 @@ class ProjectResource extends Resource
                             ->schema([
                                 Forms\Components\SpatieMediaLibraryFileUpload::make('cover')
                                     ->label(__('Cover image'))
+                                    ->collection('cover')
                                     ->image()
                                     ->helperText(
                                         __('If not selected, an image will be generated based on the project name')
@@ -148,6 +150,30 @@ class ProjectResource extends Resource
                                     ->default(fn() => 'default')
                                     ->disabled(fn($record) => $record && $record->tickets()->count())
                                     ->required(),
+
+                                Forms\Components\SpatieMediaLibraryFileUpload::make('brs_document')
+                                    ->label(__('BRS Document'))
+                                    ->collection('brs_document')
+                                    ->columnSpan(2)
+                                    ->helperText(__('The BRS document for the project'))
+                                    ->acceptedFileTypes([
+                                        'application/pdf',
+                                        'application/msword',
+                                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                                    ])
+                                    ->maxFiles(1),
+                                    
+                                Forms\Components\Placeholder::make('brs_document_download')
+                                    ->label('Current BRS Document')
+                                    ->content(function ($record) {
+                                        if ($record && $record->hasMedia('brs_document')) {
+                                            $media = $record->getFirstMedia('brs_document');
+                                            $displayName = $media->name . '.' . pathinfo($media->file_name, PATHINFO_EXTENSION);
+                                            return new HtmlString('<a href="' . $media->getUrl() . '" target="_blank" download="' . $displayName . '">📄 ' . $displayName . '</a>');
+                                        }
+                                        return 'No file uploaded';
+                                    })
+                                    ->visible(fn ($record) => filled($record) && $record->exists)
                             ]),
                     ]),
             ]);
@@ -293,5 +319,11 @@ class ProjectResource extends Resource
             'view' => Pages\ViewProject::route('/{record}'),
             'edit' => Pages\EditProject::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with('media');
     }
 }
