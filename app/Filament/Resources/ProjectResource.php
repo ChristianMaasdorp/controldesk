@@ -135,6 +135,7 @@ class ProjectResource extends Resource
                                 Forms\Components\TextInput::make('github_api_key')
                                     ->label(__('GitHub API Key'))
                                     ->password()
+                                    ->nullable()
                                     ->helperText(__('Your GitHub personal access token'))
                                     ->columnSpan(2),
 
