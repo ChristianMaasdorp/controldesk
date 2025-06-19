@@ -162,7 +162,6 @@ class ProjectResource extends Resource
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
                                     ->maxFiles(1),
-                                // This is the BRS code update
                                     
                                 Forms\Components\Placeholder::make('brs_document_download')
                                     ->label('Current BRS Document')
