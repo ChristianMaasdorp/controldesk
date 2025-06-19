@@ -18,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
+    // Updated with MediaObserver and Spatie MediaLibrary integration
     public function register()
     {
         //

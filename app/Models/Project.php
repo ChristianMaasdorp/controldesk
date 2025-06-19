@@ -12,6 +12,24 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+ /**
+  * The Project model represents a project in the system.
+  * 
+  * @property int $id
+  * @property string $name
+  * @property string $description
+  * @property int $status_id
+  * @property int $owner_id
+  * @property string $ticket_prefix
+  * @property string $status_type
+  * @property string $type
+  * @property string $github_repository_url
+  * @property string $github_api_key
+  * @property \Carbon\Carbon $created_at
+  * @property \Carbon\Carbon $updated_at
+  * @property \Carbon\Carbon $deleted_at
+  */
+
 class Project extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, InteractsWithMedia;
