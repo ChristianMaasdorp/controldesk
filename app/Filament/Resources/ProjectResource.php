@@ -127,6 +127,7 @@ class ProjectResource extends Resource
                                 Forms\Components\TextInput::make('github_repository_url')
                                     ->label(__('GitHub Repository URL'))
                                     ->url()
+                                    ->nullable()
                                     ->placeholder('https://github.com/username/repository')
                                     ->helperText(__('The URL of your GitHub repository'))
                                     ->columnSpan(2),
@@ -134,6 +135,7 @@ class ProjectResource extends Resource
                                 Forms\Components\TextInput::make('github_api_key')
                                     ->label(__('GitHub API Key'))
                                     ->password()
+                                    ->nullable()
                                     ->helperText(__('Your GitHub personal access token'))
                                     ->columnSpan(2),
 
@@ -162,8 +164,7 @@ class ProjectResource extends Resource
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
                                     ->maxFiles(1),
-                                // This is the BRS code update
-                                    
+
                                 Forms\Components\Placeholder::make('brs_document_download')
                                     ->label('Current BRS Document')
                                     ->content(function ($record) {
