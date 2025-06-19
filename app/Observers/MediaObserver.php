@@ -8,11 +8,11 @@ class MediaObserver
 {
     public function creating(Media $media)
     {
-        // Don't modify file_name as it affects actual file storage and URLs
-        // The 'name' field is automatically set to the original filename without extension
-        // The 'file_name' field should be left as-is for proper file access
+        // Set the name field to the original file name without extension
+        $pathInfo = pathinfo($media->file_name);
+        $media->name = $pathInfo['filename'];
         
-        // Spatie Media Library handles file storage automatically
-        // We'll use the 'name' field for user-friendly display in the UI
+        // Ensure the file_name doesn't get modified with -meta
+        $media->file_name = $pathInfo['filename'] . '.' . $pathInfo['extension'];
     }
 } 
