@@ -87,6 +87,13 @@ class Attachments extends Component implements HasForms, HasTable
                 ->label(__('Mime type'))
                 ->sortable()
                 ->searchable(),
+
+            TextColumn::make('original_url')
+                ->label(__('Download'))
+                ->url(fn ($record): string => $record->getOriginalUrl())
+                ->sortable()
+                ->searchable(),
+
         ];
     }
 
@@ -98,6 +105,7 @@ class Attachments extends Component implements HasForms, HasTable
                     $record->delete();
                     Filament::notify('success', __('Ticket attachment deleted'));
                 })
+
         ];
     }
 }
