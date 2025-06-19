@@ -10,8 +10,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\ServiceProvider;
-use App\Observers\MediaObserver;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,10 +33,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // Configure application
         $this->configureApp();
-
-        // Temporarily comment out the Media observer to test
-        // Just updated this 
-        // Media::observe(MediaObserver::class);
 
         // Register custom Filament theme
         Filament::serving(function () {
