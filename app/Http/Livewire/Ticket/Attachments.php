@@ -90,7 +90,7 @@ class Attachments extends Component implements HasForms, HasTable
 
             TextColumn::make('original_url')
                 ->label(__('Download'))
-                ->url(fn ($record): string => $record->getOriginalUrl())
+                ->url(fn ($record): string => $record->getUrl())
                 ->sortable()
                 ->searchable(),
 
