@@ -170,11 +170,6 @@ class ProjectResource extends Resource
                                         Log::info('File upload state updated', [
                                             'state' => $state
                                         ]);
-                                    })
-                                    ->beforeStateDehydrated(function ($state) {
-                                        \Log::info('BRS Document before dehydration', [
-                                            'state' => $state
-                                        ]);
                                     }),
 
                                 Forms\Components\Placeholder::make('brs_document_download')
