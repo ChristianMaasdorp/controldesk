@@ -20,6 +20,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 class ProjectResource extends Resource
 {
@@ -163,21 +164,18 @@ class ProjectResource extends Resource
                                         'application/msword',
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
+                                    ->preserveFilenames()
                                     ->maxFiles(1)
                                     ->afterStateUpdated(function ($state, $record) {
-                                        \Log::info('BRS Document state updated', [
-                                            'state' => $state,
-                                            'record' => $record?->id
+                                        Log::info('File upload state updated', [
+                                            'state' => $state
                                         ]);
                                     })
                                     ->beforeStateDehydrated(function ($state) {
                                         \Log::info('BRS Document before dehydration', [
                                             'state' => $state
                                         ]);
-                                    })
-                                    ->preserveFilenames(),  
-                                    ->maxFiles(1),
-                              
+                                    }),
 
                                 Forms\Components\Placeholder::make('brs_document_download')
                                     ->label('Current BRS Document')
