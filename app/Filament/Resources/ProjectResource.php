@@ -161,8 +161,20 @@ class ProjectResource extends Resource
                                         'application/msword',
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
-                                    ->maxFiles(1),
-                                    //TODO Update this 
+                                    ->maxFiles(1)
+                                    ->afterStateUpdated(function ($state, $record) {
+                                        \Log::info('BRS Document state updated', [
+                                            'state' => $state,
+                                            'record' => $record?->id
+                                        ]);
+                                    })
+                                    ->beforeStateDehydrated(function ($state) {
+                                        \Log::info('BRS Document before dehydration', [
+                                            'state' => $state
+                                        ]);
+                                    })
+                                    ->preserveFilenames(),
+                                    
                                 Forms\Components\Placeholder::make('brs_document_download')
                                     ->label('Current BRS Document')
                                     ->content(function ($record) {

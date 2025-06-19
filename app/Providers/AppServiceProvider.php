@@ -36,10 +36,6 @@ class AppServiceProvider extends ServiceProvider
         // Configure application
         $this->configureApp();
 
-        // Temporarily comment out the Media observer to test
-        // Just updated this 
-        // Media::observe(MediaObserver::class);
-
         // Register custom Filament theme
         Filament::serving(function () {
             Filament::registerTheme(
