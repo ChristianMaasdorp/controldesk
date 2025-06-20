@@ -159,7 +159,6 @@ class ProjectResource extends Resource
                                     ->collection('brs_document')
                                     ->columnSpan(2)
                                     ->enableDownload()
-                                    ->enablePreview()
                                     ->enableDelete()
                                     ->helperText(__('The BRS document for the project'))
                                     ->acceptedFileTypes([
