@@ -21,7 +21,6 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
-use Filament\Forms\Components\Actions\Action;
 
 class ProjectResource extends Resource
 {
@@ -159,6 +158,9 @@ class ProjectResource extends Resource
                                     ->label(__('BRS Document'))
                                     ->collection('brs_document')
                                     ->columnSpan(2)
+                                    ->enableDownload()
+                                    ->enablePreview()
+                                    ->enableDelete()
                                     ->helperText(__('The BRS document for the project'))
                                     ->acceptedFileTypes([
                                         'application/pdf',
@@ -177,12 +179,6 @@ class ProjectResource extends Resource
                                             'state' => $state
                                         ]);
                                     }),
-                                    Action::make('delete')
-                                        ->icon('heroicon-s-trash')
-                                        ->action(function ($record) {
-                                            $record->clearMediaCollection('brs_document');
-                                            Filament::notify('success', __('BRS document removed'));
-                                        })
                             ])
                     ]),
             ]);
