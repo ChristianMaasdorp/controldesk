@@ -21,6 +21,7 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
+use Filament\Forms\Components\Actions\Action;
 
 class ProjectResource extends Resource
 {
@@ -164,6 +165,8 @@ class ProjectResource extends Resource
                                         'application/msword',
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
+                                    ->deleteFileButtonPosition('left')
+                                    ->deletable()
                                     ->preserveFilenames()
                                     ->maxFiles(1)
                                     ->afterStateUpdated(function ($state, $record) {
@@ -175,20 +178,15 @@ class ProjectResource extends Resource
                                         \Log::info('BRS Document before dehydration', [
                                             'state' => $state
                                         ]);
-                                    }),
-
-                                Forms\Components\Placeholder::make('brs_document_download')
-                                    ->label('Current BRS Document')
-                                    ->content(function ($record) {
-                                        if ($record && $record->hasMedia('brs_document')) {
-                                            $media = $record->getFirstMedia('brs_document');
-                                            $displayName = $media->name . '.' . pathinfo($media->file_name, PATHINFO_EXTENSION);
-                                            return new HtmlString('<a href="' . $media->getUrl() . '" target="_blank" download="' . $displayName . '">📄 ' . $displayName . '</a>');
-                                        }
-                                        return 'No file uploaded';
                                     })
-                                    ->visible(fn ($record) => filled($record) && $record->exists)
-                            ]),
+                                    ->suffixAction(fn (?string $state): Action =>
+                                        Action::make('delete')
+                                            ->icon('heroicon-s-trash')
+                                            ->action(function ($record) {
+                                                $record->clearMediaCollection('brs_document');
+                                                Filament::notify('success', __('BRS document removed'));
+                                            })
+                                    )])
                     ]),
             ]);
     }
