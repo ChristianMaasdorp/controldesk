@@ -176,15 +176,14 @@ class ProjectResource extends Resource
                                         \Log::info('BRS Document before dehydration', [
                                             'state' => $state
                                         ]);
-                                    })
-                                    ->suffixAction(fn (?string $state): Action =>
-                                        Action::make('delete')
-                                            ->icon('heroicon-s-trash')
-                                            ->action(function ($record) {
-                                                $record->clearMediaCollection('brs_document');
-                                                Filament::notify('success', __('BRS document removed'));
-                                            })
-                                    )])
+                                    }),
+                                    Action::make('delete')
+                                        ->icon('heroicon-s-trash')
+                                        ->action(function ($record) {
+                                            $record->clearMediaCollection('brs_document');
+                                            Filament::notify('success', __('BRS document removed'));
+                                        })
+                            ])
                     ]),
             ]);
     }
