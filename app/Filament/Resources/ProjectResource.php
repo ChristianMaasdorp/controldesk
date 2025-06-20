@@ -165,8 +165,6 @@ class ProjectResource extends Resource
                                         'application/msword',
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
-                                    ->deleteFileButtonPosition('left')
-                                    ->deletable()
                                     ->preserveFilenames()
                                     ->maxFiles(1)
                                     ->afterStateUpdated(function ($state, $record) {
