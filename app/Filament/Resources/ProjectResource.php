@@ -164,6 +164,7 @@ class ProjectResource extends Resource
                                         'application/msword',
                                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                                     ])
+                                    ->downloadable()
                                     ->preserveFilenames()
                                     ->maxFiles(1)
                                     ->afterStateUpdated(function ($state, $record) {
