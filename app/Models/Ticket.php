@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Notifications\TicketCreated;
+use App\Notifications\TicketCreatedForOwner;
+use App\Notifications\TicketAssigned;
 use App\Notifications\TicketStatusUpdated;
 use Carbon\CarbonInterval;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -58,8 +60,20 @@ class Ticket extends Model implements HasMedia
             if ($item->sprint_id && $item->sprint->epic_id) {
                 Ticket::where('id', $item->id)->update(['epic_id' => $item->sprint->epic_id]);
             }
+
+            // Send generic notification to all project watchers
             foreach ($item->watchers as $user) {
                 $user->notify(new TicketCreated($item));
+            }
+
+            // Send specific notification to the ticket creator
+            if ($item->owner) {
+                $item->owner->notify(new TicketCreatedForOwner($item));
+            }
+
+            // Send specific notification to the assigned user
+            if ($item->responsible) {
+                $item->responsible->notify(new TicketAssigned($item));
             }
         });
 
@@ -279,5 +293,4 @@ class Ticket extends Model implements HasMedia
     {
         return $this->hasMany(TicketGithubCommit::class)->orderBy('committed_at', 'desc');
     }
-
 }

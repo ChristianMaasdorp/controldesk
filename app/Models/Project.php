@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Notifications\ProjectCreated;
 
  /**
   * The Project model represents a project in the system.
@@ -43,6 +44,29 @@ class Project extends Model implements HasMedia
         'cover',
         'brs_document'
     ];
+
+    /**
+     * Boot method to handle model events
+     */
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function (Project $project) {
+            // Get all users assigned to the project
+            $assignedUsers = $project->users;
+            
+            // Also include the project owner if not already in the assigned users
+            if (!$assignedUsers->contains('id', $project->owner_id)) {
+                $assignedUsers->push($project->owner);
+            }
+
+            // Send notification to all assigned users
+            foreach ($assignedUsers as $user) {
+                $user->notify(new ProjectCreated($project));
+            }
+        });
+    }
 
     public function owner(): BelongsTo
     {
