@@ -11,7 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TicketCreated extends Notification implements ShouldQueue
+class TicketCreatedForOwner extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -48,20 +48,24 @@ class TicketCreated extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject(__('New ticket created: :name', ['name' => $this->ticket->name]))
-            ->line(__('A new ticket has just been created.'))
-            ->line('- ' . __('Ticket code:') . ' ' . $this->ticket->code)
-            ->line('- ' . __('Ticket name:') . ' ' . $this->ticket->name)
+            ->subject(__('Ticket created successfully: :name', ['name' => $this->ticket->name]))
+            ->line(__('You have successfully created ticket: :name', ['name' => $this->ticket->name]))
             ->line('- ' . __('Project:') . ' ' . $this->ticket->project->name)
-            ->line('- ' . __('Owner:') . ' ' . $this->ticket->owner->name)
-            ->line('- ' . __('Ticket has been assigned to:') . ' ' . ($this->ticket->responsible?->name ?? '-'))
+            ->line('- ' . __('Assigned to:') . ' ' . ($this->ticket->responsible?->name ?? __('Unassigned')))
             ->line('- ' . __('Status:') . ' ' . $this->ticket->status->name)
             ->line('- ' . __('Type:') . ' ' . $this->ticket->type->name)
             ->line('- ' . __('Priority:') . ' ' . $this->ticket->priority->name)
-            ->line(__('See more details of this ticket by clicking on the button below:'))
-            ->action(__('View details'), route('filament.resources.tickets.share', $this->ticket->code));
+            ->line('- ' . __('Ticket code:') . ' ' . $this->ticket->code)
+            ->line(__('You can view and manage your ticket using the link below:'))
+            ->action(__('View ticket'), route('filament.resources.tickets.share', $this->ticket->code));
     }
 
+    /**
+     * Get the database representation of the notification.
+     *
+     * @param User $notifiable
+     * @return array
+     */
     public function toDatabase(User $notifiable): array
     {
         return FilamentNotification::make()
