@@ -18,6 +18,13 @@ class GithubService{
             throw new \Exception('GitHub repository URL or API key not configured for this project');
         }
 
+        Log::info("Project: " . $project);
+        Log::info("Project ID: " . $project->id);
+        Log::info("Project URL: " . $project->github_repository_url);
+        Log::info("Branch Name: " . $branchName);
+        Log::info("Project: " . $project);
+        Log::info("Project API Key: " . $project->github_api_key);
+
         $client = new Client();
         $client->authenticate($project->github_api_key, null, Client::AUTH_ACCESS_TOKEN);
         Log::info("Authenticated with GitHub API key");
