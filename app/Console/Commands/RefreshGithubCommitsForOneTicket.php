@@ -71,6 +71,10 @@ class RefreshGithubCommitsForOneTicket extends Command
 
             $this->info("Successfully updated {$ticket->id} with " . count($commits) . " commits.");
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            Log::error($e->getLine());
+            Log::error($e->getFile());
+            Log::error($e->getCode());
             $this->error("Failed to fetch GitHub commits for ticket {$ticket->id} branch '{$ticket->branch}': " . $e->getMessage());
             Log::error("Failed to fetch GitHub commits for ticket {$ticket->id} branch '{$ticket->branch}': " . $e->getMessage());
         }
