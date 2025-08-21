@@ -14,7 +14,7 @@ class RefreshGithubCommitsForOneTicket extends Command
      *
      * @var string
      */
-    protected $signature = 'github:refresh-commits {id}';
+    protected $signature = 'github:refresh-one-commits {id}';
 
     /**
      * The console command description.
