@@ -597,7 +597,6 @@ class ViewTicket extends ViewRecord implements HasForms
                 // If no commits are found in the database, show a notification
                 if (empty($this->githubCommits)) {
                     Notification::make()
-                        ->info()
                         ->title(__('No GitHub Commits'))
                         ->body(__('No commits found for this branch. The commits will be fetched by the background task.'))
                         ->send();
@@ -658,7 +657,6 @@ class ViewTicket extends ViewRecord implements HasForms
         try {
             // Show loading notification
             Notification::make()
-                ->info()
                 ->title(__('Refreshing Commits'))
                 ->body(__('Fetching commits from GitHub...'))
                 ->send();
