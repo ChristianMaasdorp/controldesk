@@ -111,15 +111,15 @@ Route::get('/test/markdown/{ticket_id}', function ($ticket_id) {
         if (!$ticket) {
             return response()->json(['error' => 'Ticket not found'], 404);
         }
-        
+
         $openAIService = app(\App\Services\OpenAIService::class);
-        
+
         if (!$openAIService->isConfigured()) {
             return response()->json(['error' => 'OpenAI API key is not configured'], 500);
         }
-        
+
         $result = $openAIService->generateTicketMarkdown($ticket);
-        
+
         if ($result) {
             return response()->json([
                 'success' => true,

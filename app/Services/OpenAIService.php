@@ -28,7 +28,8 @@ class OpenAIService
             $prompt = $this->buildTicketPrompt($ticket);
 
             // Debug: Dump the complete data that will be sent to OpenAI
-            $this->debugOpenAIData($ticket, $prompt);
+            // Debug: Only dump the data if there's an error (comment out for production)
+            // $this->debugOpenAIData($ticket, $prompt);
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
