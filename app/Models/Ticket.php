@@ -413,7 +413,7 @@ class Ticket extends Model implements HasMedia
             'relations:id,ticket_id,relation_id,type',
             'hours:id,ticket_id,value,comment,created_at,user_id',
             'notes:id,ticket_id,content,is_read,created_at',
-            'githubCommits:id,ticket_id,commit_hash,message,committed_at'
+            'githubCommits:id,ticket_id,sha,message,committed_at'
         ];
 
         // Use provided relationships or default ones
