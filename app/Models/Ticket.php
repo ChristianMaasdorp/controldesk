@@ -407,13 +407,13 @@ class Ticket extends Model implements HasMedia
             'priority:id,name,color',
             // 'epic:id,name,starts_at,ends_at', // Temporarily commented out due to column issue
             'sprint:id,name,starts_at,ends_at',
-            'activities:id,ticket_id,old_status_id,new_status_id,old_responsible_id,new_responsible_id,user_id,created_at',
+            'activities:id,ticket_id,old_status_id,new_status_id,user_id,created_at',
             'comments:id,ticket_id,content,user_id,created_at',
             'subscribers:id,name,email',
             'relations:id,ticket_id,relation_id,type',
             'hours:id,ticket_id,value,comment,created_at,user_id',
             'notes:id,ticket_id,content,is_read,created_at',
-            'githubCommits:id,ticket_id,sha,message,committed_at'
+            'githubCommits:id,ticket_id,sha,message,committed_at,author,branch'
         ];
 
         // Use provided relationships or default ones
@@ -442,38 +442,48 @@ class Ticket extends Model implements HasMedia
             $ticketArray['total_estimation'] = $ticket->total_estimation;
             $ticketArray['unread_notes_count'] = $ticket->unread_notes_count;
 
-            // Add watchers (computed relationship)
-            $ticketArray['watchers'] = $ticket->watchers->map(function ($watcher) {
-                return [
-                    'id' => $watcher->id,
-                    'name' => $watcher->name,
-                    'email' => $watcher->email
-                ];
-            })->toArray();
+            // Add watchers (computed relationship) - handle potential null relationships
+            try {
+                $ticketArray['watchers'] = $ticket->watchers->map(function ($watcher) {
+                    return [
+                        'id' => $watcher->id,
+                        'name' => $watcher->name,
+                        'email' => $watcher->email
+                    ];
+                })->toArray();
+            } catch (\Exception $e) {
+                $ticketArray['watchers'] = [];
+                $ticketArray['watchers_error'] = $e->getMessage();
+            }
 
-            // Add attached files
-            $ticketArray['attached_files'] = $ticket->getMedia()->map(function ($media) {
-                $fileData = [
-                    'id' => $media->id,
-                    'name' => $media->name,
-                    'file_name' => $media->file_name,
-                    'mime_type' => $media->mime_type,
-                    'size' => $media->size,
-                    'created_at' => $media->created_at,
-                    'url' => $media->getUrl(),
-                ];
+            // Add attached files - handle potential errors
+            try {
+                $ticketArray['attached_files'] = $ticket->getMedia()->map(function ($media) {
+                    $fileData = [
+                        'id' => $media->id,
+                        'name' => $media->name,
+                        'file_name' => $media->file_name,
+                        'mime_type' => $media->mime_type,
+                        'size' => $media->size,
+                        'created_at' => $media->created_at,
+                        'url' => $media->getUrl(),
+                    ];
 
-                // Try to include content for text-based files
-                if (in_array($media->mime_type, ['text/plain', 'text/markdown', 'text/html', 'application/json', 'application/xml'])) {
-                    try {
-                        $fileData['content'] = $media->getStream()->getContents();
-                    } catch (\Exception $e) {
-                        $fileData['content'] = null;
+                    // Try to include content for text-based files
+                    if (in_array($media->mime_type, ['text/plain', 'text/markdown', 'text/html', 'application/json', 'application/xml'])) {
+                        try {
+                            $fileData['content'] = $media->getStream()->getContents();
+                        } catch (\Exception $e) {
+                            $fileData['content'] = null;
+                        }
                     }
-                }
 
-                return $fileData;
-            })->toArray();
+                    return $fileData;
+                })->toArray();
+            } catch (\Exception $e) {
+                $ticketArray['attached_files'] = [];
+                $ticketArray['attached_files_error'] = $e->getMessage();
+            }
 
             $exportedTickets[] = $ticketArray;
         }

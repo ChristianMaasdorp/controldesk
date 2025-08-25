@@ -103,3 +103,37 @@ Route::get('/debug/simple/{ticket_id}', function ($ticketId) {
         ], 500);
     }
 })->name('debug.simple');
+
+// Test markdown generation route
+Route::get('/test/markdown/{ticket_id}', function ($ticket_id) {
+    try {
+        $ticket = \App\Models\Ticket::find($ticket_id);
+        if (!$ticket) {
+            return response()->json(['error' => 'Ticket not found'], 404);
+        }
+        
+        $openAIService = app(\App\Services\OpenAIService::class);
+        
+        if (!$openAIService->isConfigured()) {
+            return response()->json(['error' => 'OpenAI API key is not configured'], 500);
+        }
+        
+        $result = $openAIService->generateTicketMarkdown($ticket);
+        
+        if ($result) {
+            return response()->json([
+                'success' => true,
+                'ticket_id' => $ticket->id,
+                'ticket_code' => $ticket->code,
+                'ticket_name' => $ticket->name,
+                'markdown_generated' => !empty($ticket->markdown_content),
+                'markdown_length' => strlen($ticket->markdown_content ?? ''),
+                'markdown_preview' => substr($ticket->markdown_content ?? '', 0, 500) . '...'
+            ]);
+        } else {
+            return response()->json(['error' => 'Failed to generate markdown'], 500);
+        }
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+})->name('test.markdown');
