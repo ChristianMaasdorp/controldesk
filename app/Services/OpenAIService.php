@@ -79,7 +79,7 @@ class OpenAIService
      * @param Ticket $ticket
      * @return string
      */
-    protected function buildTicketPrompt(Ticket $ticket)
+    public function buildTicketPrompt(Ticket $ticket)
     {
         $ticketData = $ticket->exportToArray([$ticket->id])[0];
 
