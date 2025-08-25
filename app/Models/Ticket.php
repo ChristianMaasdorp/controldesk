@@ -24,6 +24,7 @@ class Ticket extends Model implements HasMedia
     protected $fillable = [
         'name',
         'content',
+        'markdown_content',
         'owner_id',
         'responsible_id',
         'status_id',
@@ -292,5 +293,191 @@ class Ticket extends Model implements HasMedia
     public function githubCommits()
     {
         return $this->hasMany(TicketGithubCommit::class)->orderBy('committed_at', 'desc');
+    }
+
+    /**
+     * Get the markdown content as HTML
+     *
+     * @return string|null
+     */
+    public function getMarkdownAsHtml()
+    {
+        if (!$this->markdown_content) {
+            return null;
+        }
+
+        // You can use any markdown parser here
+        // For example, if you have league/commonmark installed:
+        // return (new \League\CommonMark\GithubFlavoredMarkdownConverter())->convert($this->markdown_content);
+
+        // For now, return the raw markdown content
+        return $this->markdown_content;
+    }
+
+    /**
+     * Check if the ticket has markdown content
+     *
+     * @return bool
+     */
+    public function hasMarkdownContent()
+    {
+        return !empty($this->markdown_content);
+    }
+
+    /**
+     * Generate markdown content using OpenAI
+     *
+     * @return string|null
+     */
+    public function generateMarkdownContent()
+    {
+        $openAIService = app(\App\Services\OpenAIService::class);
+
+        if (!$openAIService->isConfigured()) {
+            throw new \Exception('OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env file.');
+        }
+
+        return $openAIService->generateTicketMarkdown($this);
+    }
+
+    /**
+     * Get all comments with full content
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllCommentsWithContent()
+    {
+        return $this->comments()->with('user')->orderBy('created_at', 'asc')->get();
+    }
+
+    /**
+     * Get all attached files with content for text files
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAttachedFilesWithContent()
+    {
+        return $this->getMedia()->map(function ($media) {
+            $fileData = [
+                'id' => $media->id,
+                'name' => $media->name,
+                'file_name' => $media->file_name,
+                'mime_type' => $media->mime_type,
+                'size' => $media->size,
+                'created_at' => $media->created_at,
+                'url' => $media->getUrl(),
+            ];
+
+            // Try to include content for text-based files
+            if (in_array($media->mime_type, ['text/plain', 'text/markdown', 'text/html', 'application/json', 'application/xml'])) {
+                try {
+                    $fileData['content'] = $media->getStream()->getContents();
+                } catch (\Exception $e) {
+                    $fileData['content'] = null;
+                }
+            }
+
+            return $fileData;
+        });
+    }
+
+    /**
+     * Export tickets to array with relationships
+     *
+     * @param array $ticketIds Optional array of ticket IDs to export specific tickets
+     * @param array $withRelationships Optional array of relationships to include
+     * @return array
+     */
+    public static function exportToArray($ticketIds = null, $withRelationships = null)
+    {
+        $query = self::query();
+
+        // Filter by specific ticket IDs if provided
+        if ($ticketIds) {
+            $query->whereIn('id', $ticketIds);
+        }
+
+        // Define default relationships to include
+        $defaultRelationships = [
+            'owner:id,name,email',
+            'responsible:id,name,email',
+            'status:id,name,color',
+            'project:id,name,description',
+            'type:id,name,color',
+            'priority:id,name,color',
+            'epic:id,name,description',
+            'sprint:id,name,start_date,end_date',
+            'activities:id,ticket_id,old_status_id,new_status_id,old_responsible_id,new_responsible_id,user_id,created_at',
+            'comments:id,ticket_id,content,user_id,created_at',
+            'subscribers:id,name,email',
+            'relations:id,ticket_id,related_ticket_id,relation_type',
+            'hours:id,ticket_id,value,description,date,user_id',
+            'notes:id,ticket_id,content,is_read,created_at',
+            'githubCommits:id,ticket_id,commit_hash,message,committed_at'
+        ];
+
+        // Use provided relationships or default ones
+        $relationships = $withRelationships ?: $defaultRelationships;
+
+        // Load relationships
+        $query->with($relationships);
+
+        // Get tickets
+        $tickets = $query->get();
+
+        // Transform to array with relationships
+        $exportedTickets = [];
+
+        foreach ($tickets as $ticket) {
+            $ticketArray = $ticket->toArray();
+
+            // Add computed attributes
+            $ticketArray['total_logged_hours'] = $ticket->total_logged_hours;
+            $ticketArray['total_logged_seconds'] = $ticket->total_logged_seconds;
+            $ticketArray['total_logged_in_hours'] = $ticket->total_logged_in_hours;
+            $ticketArray['estimation_for_humans'] = $ticket->estimation_for_humans;
+            $ticketArray['estimation_in_seconds'] = $ticket->estimation_in_seconds;
+            $ticketArray['estimation_progress'] = $ticket->estimation_progress;
+            $ticketArray['completude_percentage'] = $ticket->completude_percentage;
+            $ticketArray['total_estimation'] = $ticket->total_estimation;
+            $ticketArray['unread_notes_count'] = $ticket->unread_notes_count;
+
+            // Add watchers (computed relationship)
+            $ticketArray['watchers'] = $ticket->watchers->map(function ($watcher) {
+                return [
+                    'id' => $watcher->id,
+                    'name' => $watcher->name,
+                    'email' => $watcher->email
+                ];
+            })->toArray();
+
+            // Add attached files
+            $ticketArray['attached_files'] = $ticket->getMedia()->map(function ($media) {
+                $fileData = [
+                    'id' => $media->id,
+                    'name' => $media->name,
+                    'file_name' => $media->file_name,
+                    'mime_type' => $media->mime_type,
+                    'size' => $media->size,
+                    'created_at' => $media->created_at,
+                    'url' => $media->getUrl(),
+                ];
+
+                // Try to include content for text-based files
+                if (in_array($media->mime_type, ['text/plain', 'text/markdown', 'text/html', 'application/json', 'application/xml'])) {
+                    try {
+                        $fileData['content'] = $media->getStream()->getContents();
+                    } catch (\Exception $e) {
+                        $fileData['content'] = null;
+                    }
+                }
+
+                return $fileData;
+            })->toArray();
+
+            $exportedTickets[] = $ticketArray;
+        }
+
+        return $exportedTickets;
     }
 }

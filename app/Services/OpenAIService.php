@@ -1,0 +1,181 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Ticket;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class OpenAIService
+{
+    protected $apiKey;
+    protected $baseUrl = 'https://api.openai.com/v1';
+
+    public function __construct()
+    {
+        $this->apiKey = config('services.openai.api_key');
+    }
+
+    /**
+     * Generate markdown documentation for a ticket
+     *
+     * @param Ticket $ticket
+     * @return string|null
+     */
+    public function generateTicketMarkdown(Ticket $ticket)
+    {
+        try {
+            $prompt = $this->buildTicketPrompt($ticket);
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/chat/completions', [
+                'model' => 'gpt-4',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a technical documentation expert. Create comprehensive markdown documentation for software development tickets. Focus on clarity, completeness, and technical accuracy.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt
+                    ]
+                ],
+                'temperature' => 0.3,
+                'max_tokens' => 2000
+            ]);
+
+            if ($response->successful()) {
+                $content = $response->json('choices.0.message.content');
+
+                // Update the ticket with the generated markdown
+                $ticket->update(['markdown_content' => $content]);
+
+                return $content;
+            } else {
+                Log::error('OpenAI API error', [
+                    'ticket_id' => $ticket->id,
+                    'response' => $response->json(),
+                    'status' => $response->status()
+                ]);
+                return null;
+            }
+        } catch (\Exception $e) {
+            Log::error('OpenAI service error', [
+                'ticket_id' => $ticket->id,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Build the prompt for the ticket
+     *
+     * @param Ticket $ticket
+     * @return string
+     */
+    protected function buildTicketPrompt(Ticket $ticket)
+    {
+        $ticketData = $ticket->exportToArray([$ticket->id])[0];
+
+        $prompt = "Please create comprehensive markdown documentation for the following software development ticket:\n\n";
+        $prompt .= "# Ticket Information\n\n";
+        $prompt .= "**Code:** {$ticket->code}\n";
+        $prompt .= "**Name:** {$ticket->name}\n";
+        $prompt .= "**Status:** {$ticket->status->name}\n";
+        $prompt .= "**Priority:** {$ticket->priority->name}\n";
+        $prompt .= "**Type:** {$ticket->type->name}\n";
+        $prompt .= "**Project:** {$ticket->project->name}\n";
+
+        if ($ticket->epic) {
+            $prompt .= "**Epic:** {$ticket->epic->name}\n";
+        }
+
+        if ($ticket->sprint) {
+            $prompt .= "**Sprint:** {$ticket->sprint->name}\n";
+        }
+
+        $prompt .= "**Owner:** {$ticket->owner->name}\n";
+
+        if ($ticket->responsible) {
+            $prompt .= "**Assigned To:** {$ticket->responsible->name}\n";
+        }
+
+        $prompt .= "**Estimation:** {$ticket->estimation_for_humans}\n";
+        $prompt .= "**Time Logged:** {$ticket->total_logged_hours}\n";
+
+        if ($ticket->content) {
+            $prompt .= "\n## Description\n\n{$ticket->content}\n";
+        }
+
+        // Add attached files information
+        $media = $ticket->getMedia();
+        if ($media->count() > 0) {
+            $prompt .= "\n## Attached Files\n\n";
+            foreach ($media as $file) {
+                $prompt .= "- **{$file->name}** ({$file->mime_type}) - {$file->size} bytes\n";
+                $prompt .= "  - File ID: {$file->id}\n";
+                $prompt .= "  - Uploaded: {$file->created_at}\n";
+
+                // Try to read file content for text-based files
+                if (in_array($file->mime_type, ['text/plain', 'text/markdown', 'text/html', 'application/json', 'application/xml'])) {
+                    try {
+                        $fileContent = $file->getStream()->getContents();
+                        $prompt .= "  - Content:\n```\n{$fileContent}\n```\n";
+                    } catch (\Exception $e) {
+                        $prompt .= "  - Content: Unable to read file content\n";
+                    }
+                }
+                $prompt .= "\n";
+            }
+        }
+
+        // Enhanced comments section with full content
+        $comments = $ticket->comments()->with('user')->orderBy('created_at', 'asc')->get();
+        if ($comments->count() > 0) {
+            $prompt .= "\n## Comments and Discussion\n\n";
+            foreach ($comments as $comment) {
+                $prompt .= "### Comment by {$comment->user->name} on {$comment->created_at->format('Y-m-d H:i:s')}\n\n";
+                $prompt .= "{$comment->content}\n\n";
+                $prompt .= "---\n\n";
+            }
+        }
+
+        if (!empty($ticketData['hours'])) {
+            $prompt .= "\n## Time Logs\n\n";
+            foreach ($ticketData['hours'] as $hour) {
+                $prompt .= "- **{$hour['date']}**: {$hour['value']}h - {$hour['description']}\n";
+            }
+        }
+
+        if (!empty($ticketData['activities'])) {
+            $prompt .= "\n## Activity History\n\n";
+            foreach ($ticketData['activities'] as $activity) {
+                $prompt .= "- Status changed from {$activity['old_status']['name']} to {$activity['new_status']['name']} on {$activity['created_at']}\n";
+            }
+        }
+
+        $prompt .= "\n\nPlease create a well-structured markdown document that includes:\n";
+        $prompt .= "1. A clear overview of the ticket\n";
+        $prompt .= "2. Technical requirements and specifications\n";
+        $prompt .= "3. Implementation details and considerations\n";
+        $prompt .= "4. Testing requirements\n";
+        $prompt .= "5. Any relevant notes or context\n";
+        $prompt .= "6. Progress tracking information\n";
+        $prompt .= "\nMake it professional, comprehensive, and easy to understand for developers and stakeholders.";
+
+        return $prompt;
+    }
+
+    /**
+     * Check if OpenAI is configured
+     *
+     * @return bool
+     */
+    public function isConfigured()
+    {
+        return !empty($this->apiKey);
+    }
+}

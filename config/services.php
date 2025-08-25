@@ -67,4 +67,8 @@ return [
         'scope' => explode(",", env('OIDC_SCOPE') ?? ''),
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+    ],
+
 ];
