@@ -311,7 +311,7 @@ class Ticket extends Model implements HasMedia
             'html_input' => 'strip',
             'allow_unsafe_links' => false,
         ]);
-        
+
         return $converter->convert($this->markdown_content);
     }
 

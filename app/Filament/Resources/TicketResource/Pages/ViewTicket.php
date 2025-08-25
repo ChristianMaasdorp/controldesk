@@ -644,7 +644,7 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->send();
 
             $openAIService = app(\App\Services\OpenAIService::class);
-            
+
             if (!$openAIService->isConfigured()) {
                 Notification::make()
                     ->danger()
@@ -655,11 +655,11 @@ class ViewTicket extends ViewRecord implements HasForms
             }
 
             $result = $openAIService->generateTicketMarkdown($this->record);
-            
+
             if ($result) {
                 // Refresh the record to get the updated markdown content
                 $this->record->refresh();
-                
+
                 Notification::make()
                     ->success()
                     ->title(__('Documentation Generated'))
@@ -674,7 +674,7 @@ class ViewTicket extends ViewRecord implements HasForms
             }
         } catch (\Exception $e) {
             Log::error("Failed to generate markdown for ticket {$this->record->id}: " . $e->getMessage());
-            
+
             Notification::make()
                 ->danger()
                 ->title(__('Error'))
