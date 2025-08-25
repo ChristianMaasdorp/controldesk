@@ -306,12 +306,13 @@ class Ticket extends Model implements HasMedia
             return null;
         }
 
-        // You can use any markdown parser here
-        // For example, if you have league/commonmark installed:
-        // return (new \League\CommonMark\GithubFlavoredMarkdownConverter())->convert($this->markdown_content);
-
-        // For now, return the raw markdown content
-        return $this->markdown_content;
+        // Use CommonMark to convert markdown to HTML
+        $converter = new \League\CommonMark\GithubFlavoredMarkdownConverter([
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ]);
+        
+        return $converter->convert($this->markdown_content);
     }
 
     /**

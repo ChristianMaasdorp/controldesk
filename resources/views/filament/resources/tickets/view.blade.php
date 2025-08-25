@@ -258,6 +258,13 @@
                         @if($tab === 'attachments') border-primary-500 text-primary-500 @else text-gray-700 @endif">
                     {{ __('Attachments') }}
                 </button>
+                {{-- Documentation Tab --}}
+                <button wire:click="selectTab('documentation')"
+                        class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center
+                        gap-1 @if($tab === 'documentation') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    <x-heroicon-o-document-text class="w-5 h-5"/>
+                    {{ __('Documentation') }}
+                </button>
                 {{-- GitHub Tab --}}
                 @if(isset($record->branch) && $record->branch !== null && $record->branch !== '')
                     <button wire:click="selectTab('github')"
@@ -440,6 +447,43 @@
             @endif
             @if($tab === 'attachments')
                 <livewire:ticket.attachments :ticket="$record" />
+            @endif
+            {{-- Documentation Tab Content --}}
+            @if($tab === 'documentation')
+                <div class="w-full pt-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">{{ __('Ticket Documentation') }}</h3>
+                        <div class="flex items-center gap-2">
+                            @if($record->markdown_content)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {{ __('Generated') }}
+                                </span>
+                            @endif
+                            <button wire:click="generateMarkdown" 
+                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <x-heroicon-o-sparkles class="h-4 w-4 mr-1" />
+                                {{ $record->markdown_content ? __('Regenerate') : __('Generate') }}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    @if($record->markdown_content)
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <div class="prose max-w-none prose-headings:text-gray-900 prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-ul:list-disc prose-ol:list-decimal">
+                                {!! $record->getMarkdownAsHtml() !!}
+                            </div>
+                        </div>
+                    @else
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                            <div class="flex items-center">
+                                <x-heroicon-o-information-circle class="h-5 w-5 text-yellow-400 mr-2" />
+                                <p class="text-yellow-800">
+                                    {{ __('No documentation has been generated yet. Click "Generate" to create comprehensive markdown documentation for this ticket using AI.') }}
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
             @endif
             {{-- GitHub Tab Content --}}
             @if($tab === 'github' && !empty($record->branch))

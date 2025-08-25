@@ -632,6 +632,58 @@ class ViewTicket extends ViewRecord implements HasForms
     }
 
     /**
+     * Generate markdown documentation for the current ticket
+     */
+    public function generateMarkdown(): void
+    {
+        try {
+            // Show loading notification
+            Notification::make()
+                ->title(__('Generating Documentation'))
+                ->body(__('Creating comprehensive markdown documentation using AI...'))
+                ->send();
+
+            $openAIService = app(\App\Services\OpenAIService::class);
+            
+            if (!$openAIService->isConfigured()) {
+                Notification::make()
+                    ->danger()
+                    ->title(__('OpenAI Not Configured'))
+                    ->body(__('OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env file.'))
+                    ->send();
+                return;
+            }
+
+            $result = $openAIService->generateTicketMarkdown($this->record);
+            
+            if ($result) {
+                // Refresh the record to get the updated markdown content
+                $this->record->refresh();
+                
+                Notification::make()
+                    ->success()
+                    ->title(__('Documentation Generated'))
+                    ->body(__('Comprehensive markdown documentation has been created successfully.'))
+                    ->send();
+            } else {
+                Notification::make()
+                    ->danger()
+                    ->title(__('Generation Failed'))
+                    ->body(__('Failed to generate documentation. Please try again.'))
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to generate markdown for ticket {$this->record->id}: " . $e->getMessage());
+            
+            Notification::make()
+                ->danger()
+                ->title(__('Error'))
+                ->body(__('An error occurred while generating documentation: ') . $e->getMessage())
+                ->send();
+        }
+    }
+
+    /**
      * Manually refresh GitHub commits for the current ticket
      */
     public function refreshGithubCommits(): void
