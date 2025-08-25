@@ -72,3 +72,34 @@ Route::get('/debug/openai/{ticket_id}', function ($ticketId) {
         ], 500);
     }
 })->name('debug.openai');
+
+// Simple test route without relationships
+Route::get('/debug/simple/{ticket_id}', function ($ticketId) {
+    try {
+        $ticket = \App\Models\Ticket::find($ticketId);
+
+        if (!$ticket) {
+            return response()->json(['error' => 'Ticket not found'], 404);
+        }
+
+        // Simple test without any relationships
+        $debugData = [
+            'ticket_id' => $ticket->id,
+            'ticket_code' => $ticket->code,
+            'ticket_name' => $ticket->name,
+            'content' => $ticket->content,
+            'markdown_content' => $ticket->markdown_content,
+            'created_at' => $ticket->created_at,
+            'updated_at' => $ticket->updated_at,
+            'basic_info' => 'This is a simple test without relationships'
+        ];
+
+        dd($debugData);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('debug.simple');

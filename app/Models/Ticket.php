@@ -405,8 +405,8 @@ class Ticket extends Model implements HasMedia
             'project:id,name,description',
             'type:id,name,color',
             'priority:id,name,color',
-            'epic:id,name,description',
-            'sprint:id,name,start_date,end_date',
+            // 'epic:id,name,starts_at,ends_at', // Temporarily commented out due to column issue
+            'sprint:id,name,starts_at,ends_at',
             'activities:id,ticket_id,old_status_id,new_status_id,old_responsible_id,new_responsible_id,user_id,created_at',
             'comments:id,ticket_id,content,user_id,created_at',
             'subscribers:id,name,email',

@@ -81,8 +81,7 @@ class OpenAIService
      */
     public function buildTicketPrompt(Ticket $ticket)
     {
-        $ticketData = $ticket->exportToArray([$ticket->id])[0];
-
+        // Simple version without using exportToArray to isolate the issue
         $prompt = "Please create comprehensive markdown documentation for the following software development ticket:\n\n";
         $prompt .= "# Ticket Information\n\n";
         $prompt .= "**Code:** {$ticket->code}\n";
@@ -93,7 +92,7 @@ class OpenAIService
         $prompt .= "**Project:** {$ticket->project->name}\n";
 
         if ($ticket->epic) {
-            $prompt .= "**Epic:** {$ticket->epic->name}\n";
+            $prompt .= "**Epic:** {$ticket->epic->name} ({$ticket->epic->starts_at} - {$ticket->epic->ends_at})\n";
         }
 
         if ($ticket->sprint) {
@@ -146,17 +145,21 @@ class OpenAIService
             }
         }
 
-        if (!empty($ticketData['hours'])) {
+        // Add time logs
+        $hours = $ticket->hours()->orderBy('date', 'asc')->get();
+        if ($hours->count() > 0) {
             $prompt .= "\n## Time Logs\n\n";
-            foreach ($ticketData['hours'] as $hour) {
-                $prompt .= "- **{$hour['date']}**: {$hour['value']}h - {$hour['description']}\n";
+            foreach ($hours as $hour) {
+                $prompt .= "- **{$hour->date}**: {$hour->value}h - {$hour->description}\n";
             }
         }
 
-        if (!empty($ticketData['activities'])) {
+        // Add activity history
+        $activities = $ticket->activities()->with(['oldStatus', 'newStatus'])->orderBy('created_at', 'asc')->get();
+        if ($activities->count() > 0) {
             $prompt .= "\n## Activity History\n\n";
-            foreach ($ticketData['activities'] as $activity) {
-                $prompt .= "- Status changed from {$activity['old_status']['name']} to {$activity['new_status']['name']} on {$activity['created_at']}\n";
+            foreach ($activities as $activity) {
+                $prompt .= "- Status changed from {$activity->oldStatus->name} to {$activity->newStatus->name} on {$activity->created_at}\n";
             }
         }
 
