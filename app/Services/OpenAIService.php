@@ -27,6 +27,9 @@ class OpenAIService
         try {
             $prompt = $this->buildTicketPrompt($ticket);
 
+            // Debug: Dump the complete data that will be sent to OpenAI
+            $this->debugOpenAIData($ticket, $prompt);
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
@@ -177,5 +180,54 @@ class OpenAIService
     public function isConfigured()
     {
         return !empty($this->apiKey);
+    }
+
+    /**
+     * Debug method to dump the complete data that will be sent to OpenAI
+     *
+     * @param Ticket $ticket
+     * @param string $prompt
+     * @return void
+     */
+    protected function debugOpenAIData(Ticket $ticket, string $prompt)
+    {
+        try {
+            $debugData = [
+                'ticket_id' => $ticket->id,
+                'ticket_code' => $ticket->code,
+                'ticket_name' => $ticket->name,
+                'prompt_length' => strlen($prompt),
+                'prompt_preview' => substr($prompt, 0, 500) . '...',
+                'full_prompt' => $prompt,
+                'attached_files_count' => $ticket->getMedia()->count(),
+                'comments_count' => $ticket->comments()->count(),
+                'hours_count' => $ticket->hours()->count(),
+                'activities_count' => $ticket->activities()->count(),
+                'api_config' => [
+                    'model' => 'gpt-4',
+                    'temperature' => 0.3,
+                    'max_tokens' => 2000,
+                    'api_key_configured' => $this->isConfigured(),
+                    'api_key_length' => strlen($this->apiKey ?? ''),
+                ]
+            ];
+
+            // Try to get ticket data, but don't fail if database is not available
+            try {
+                $debugData['ticket_data'] = $ticket->exportToArray([$ticket->id])[0];
+            } catch (\Exception $e) {
+                $debugData['ticket_data_error'] = $e->getMessage();
+            }
+
+            // Dump the complete debug data
+            dd($debugData);
+        } catch (\Exception $e) {
+            dd([
+                'debug_error' => $e->getMessage(),
+                'ticket_id' => $ticket->id ?? 'unknown',
+                'prompt_length' => strlen($prompt),
+                'prompt_preview' => substr($prompt, 0, 200) . '...'
+            ]);
+        }
     }
 }

@@ -49,3 +49,26 @@ Route::get('/ticket/note/{note}/read', function ($note) {
 
     return abort(403);
 })->middleware(['auth'])->name('ticket.note.read');
+
+// Debug route for OpenAI service
+Route::get('/debug/openai/{ticket_id}', function ($ticketId) {
+    try {
+        $ticket = \App\Models\Ticket::find($ticketId);
+
+        if (!$ticket) {
+            return response()->json(['error' => 'Ticket not found'], 404);
+        }
+
+        $openAIService = app(\App\Services\OpenAIService::class);
+        $prompt = $openAIService->buildTicketPrompt($ticket);
+
+        // This will trigger the debug dump
+        $openAIService->generateTicketMarkdown($ticket);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+})->name('debug.openai');
