@@ -146,11 +146,11 @@ class OpenAIService
         }
 
         // Add time logs
-        $hours = $ticket->hours()->orderBy('date', 'asc')->get();
+        $hours = $ticket->hours()->orderBy('created_at', 'asc')->get();
         if ($hours->count() > 0) {
             $prompt .= "\n## Time Logs\n\n";
             foreach ($hours as $hour) {
-                $prompt .= "- **{$hour->date}**: {$hour->value}h - {$hour->description}\n";
+                $prompt .= "- **{$hour->created_at->format('Y-m-d H:i:s')}**: {$hour->value}h - {$hour->comment}\n";
             }
         }
 

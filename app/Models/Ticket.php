@@ -411,7 +411,7 @@ class Ticket extends Model implements HasMedia
             'comments:id,ticket_id,content,user_id,created_at',
             'subscribers:id,name,email',
             'relations:id,ticket_id,related_ticket_id,relation_type',
-            'hours:id,ticket_id,value,description,date,user_id',
+            'hours:id,ticket_id,value,comment,created_at,user_id',
             'notes:id,ticket_id,content,is_read,created_at',
             'githubCommits:id,ticket_id,commit_hash,message,committed_at'
         ];
