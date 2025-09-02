@@ -445,14 +445,8 @@ class TicketResource extends Resource
                 BulkAction::make('removeFromEpic')
                     ->label('Remove from Epic')
                     ->icon('heroicon-o-user')
-                    ->form([
-                        Select::make('epic_id')
-                            ->label('Epic')
-                            ->options(Epic::pluck('name', 'id')->toArray())
-                            ->searchable()
-                            ->required(),
-                ])
-                    ->action(function (Collection $records, array $data): void {
+                    ->deselectRecordsAfterCompletion()
+                    ->action(function (Collection $records): void {
                         // dd($data);  Dump form input to teest data requested
                         foreach ($records as $record) {
                             $record->update([
@@ -461,7 +455,6 @@ class TicketResource extends Resource
                         }
                     })
                     ->deselectRecordsAfterCompletion()
-
                     ->after(function(){
                         Notification::make()
                         ->title('Removed from Epic successfully')
