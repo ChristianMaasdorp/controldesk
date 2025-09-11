@@ -361,6 +361,14 @@ class TicketResource extends Resource
                         ->orWhereHas('users', function ($query) {
                             return $query->where('users.id', auth()->user()->id);
                         })->pluck('name', 'id')->toArray()),
+                Tables\Filters\SelectFilter::make('epic_id')
+                    ->label(__('Epic'))
+                    ->multiple()
+                    ->options(function(){
+                        return Epic::whereHas('project.users', function ($query) {
+                            return $query->where('users.id', auth()->user()->id);
+                        })->pluck('name', 'id')->toArray();
+                    }),
                 Tables\Filters\SelectFilter::make('owner_id')
                     ->label(__('Owner'))
                     ->multiple()
