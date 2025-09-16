@@ -36,7 +36,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
             // In production, you can restrict access to specific users
             return in_array(optional($user)->email, [
                 // Add admin email addresses here
-                // 'admin@example.com',
+               'jacques@ncloud.africa',
             ]);
         });
     }
