@@ -20,3 +20,4 @@ composer.lock
 package-lock.json
 yarn.lock
 *.lock
+.DS_Store

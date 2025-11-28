@@ -3,18 +3,15 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Gate;
-use Laravel\Horizon\Horizon;
-use Laravel\Horizon\HorizonApplicationServiceProvider;
+use Illuminate\Support\ServiceProvider;
 
-class HorizonServiceProvider extends HorizonApplicationServiceProvider
+class HorizonServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        parent::boot();
-
         // Horizon::routeSmsNotificationsTo('15556667777');
         // Horizon::routeMailNotificationsTo('example@example.com');
         // Horizon::routeSlackNotificationsTo('slack-webhook-url', '#channel');
@@ -36,7 +33,7 @@ class HorizonServiceProvider extends HorizonApplicationServiceProvider
             // In production, you can restrict access to specific users
             return in_array(optional($user)->email, [
                 // Add admin email addresses here
-               'jacques@ncloud.africa',
+                'jacques@ncloud.africa',
             ]);
         });
     }
