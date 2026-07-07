@@ -523,6 +523,84 @@ class TicketResource extends Resource
                         ->success()
                         ->send();
                 }),
+                BulkAction::make('changeProject')
+                    ->label('Change Project')
+                    ->icon('heroicon-o-user')
+                    ->form([
+                        Select::make('project_id')
+                            ->label('Project')
+                            ->options(fn() => Project::where('owner_id', auth()->user()->id)
+                                ->orWhereHas('users', function ($query) {
+                                    return $query->where('users.id', auth()->user()->id);
+                                })
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->searchable()
+                            ->required(),
+                    ])
+                    ->action(function (Collection $records, array $data): void {
+                        $project = Project::find($data['project_id']);
+                        $defaultStatusId = null;
+
+                        if ($project?->status_type === 'custom') {
+                            $defaultStatusId = TicketStatus::where('project_id', $project->id)
+                                ->where('is_default', true)
+                                ->value('id');
+                        } else {
+                            $defaultStatusId = TicketStatus::whereNull('project_id')
+                                ->where('is_default', true)
+                                ->value('id');
+                        }
+
+                        foreach ($records as $record) {
+                            $record->update([
+                                'project_id' => $data['project_id'],
+                                'status_id' => $defaultStatusId ?? $record->status_id,
+                            ]);
+                        }
+                    })
+                    ->deselectRecordsAfterCompletion()
+
+                    ->after(function(){
+                        Notification::make()
+                        ->title('Changed Project successfully')
+                        ->success()
+                        ->send();
+                    }),
+                BulkAction::make('changeStatus')
+                    ->label('Change Status')
+                    ->icon('heroicon-o-user')
+                    ->form([
+                        Select::make('status_id')
+                            ->label('Status')
+                            ->options(fn() => TicketStatus::whereNull('project_id')
+                                ->orWhereHas('project', function ($query) {
+                                    return $query->where('owner_id', auth()->user()->id)
+                                        ->orWhereHas('users', function ($query) {
+                                            return $query->where('users.id', auth()->user()->id);
+                                        });
+                                })
+                                ->pluck('name', 'id')
+                                ->toArray())
+                            ->searchable()
+                            ->required(),
+                    ])
+                    ->action(function (Collection $records, array $data): void {
+                        // dd($data);  Dump form input to teest data requested
+                        foreach ($records as $record) {
+                            $record->update([
+                                'status_id' => $data['status_id'],
+                            ]);
+                        }
+                    })
+                    ->deselectRecordsAfterCompletion()
+
+                    ->after(function(){
+                        Notification::make()
+                        ->title('Changed Status successfully')
+                        ->success()
+                        ->send();
+                    }),
                 ExportBulkAction::make('Export Selected')
                     ->exports([
                         ExcelExport::make('Clean Data')
