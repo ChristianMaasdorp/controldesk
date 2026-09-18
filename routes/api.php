@@ -22,8 +22,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Public routes (if any)
 // Route::post('/login', [AuthController::class, 'login']);
 
-// Protected routes
 Route::prefix('tickets')->group(function () {
     Route::post('/', [TicketController::class, 'store'])->name('api.tickets.store');
-    Route::get('/{id}', [TicketController::class, 'get'])->name('api.tickets.get');
+
+    Route::middleware('tickets.api')->group(function () {
+        Route::get('/', [TicketController::class, 'index'])->name('api.tickets.index');
+        Route::get('/{id}', [TicketController::class, 'get'])->name('api.tickets.get');
+    });
 });

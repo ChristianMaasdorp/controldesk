@@ -419,13 +419,18 @@ class TicketResource extends Resource
                             Column::make('name')
                                 ->formatStateUsing(fn($record) => trim(preg_replace('/\s+/', ' ', $record->name ?? ''))),
 
+                            Column::make('')
+                            ,
+
                             Column::make('owner.name')
+                                ->label('Owner')
                                 ->formatStateUsing(function($record) {
                                     if (!$record->owner) return '';
                                     return trim($record->owner->name);
                                 }),
 
                             Column::make('responsible.name')
+                                ->label('Responsible')
                                 ->formatStateUsing(function($record) {
                                     if (!$record->responsible) return '';
 

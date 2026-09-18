@@ -71,4 +71,8 @@ return [
         'api_key' => env('OPENAI_API_KEY'),
     ],
 
+    'tickets_api' => [
+        'token' => env('TICKETS_API_TOKEN'),
+    ],
+
 ];
