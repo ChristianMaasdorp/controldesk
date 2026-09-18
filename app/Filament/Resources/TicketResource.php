@@ -423,14 +423,14 @@ class TicketResource extends Resource
                             ,
 
                             Column::make('owner.name')
-                                ->label('Owner')
+                                ->heading('Owner')
                                 ->formatStateUsing(function($record) {
                                     if (!$record->owner) return '';
                                     return trim($record->owner->name);
                                 }),
 
                             Column::make('responsible.name')
-                                ->label('Responsible')
+                                ->heading('Responsible')
                                 ->formatStateUsing(function($record) {
                                     if (!$record->responsible) return '';
 
