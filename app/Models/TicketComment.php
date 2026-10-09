@@ -26,10 +26,6 @@ class TicketComment extends Model
         parent::boot();
 
         static::created(function (TicketComment $item) {
-            if (request()->attributes->get('tickets.api.silent', false)) {
-                return;
-            }
-
             foreach ($item->ticket->watchers as $user) {
                 $user->notify(new TicketCommented($item));
             }

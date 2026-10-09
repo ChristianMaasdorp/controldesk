@@ -114,6 +114,13 @@ class TicketReadApiTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_creating_a_ticket_does_not_require_the_read_token(): void
+    {
+        $this->postJson('/api/tickets', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['project_id', 'name', 'owner_id', 'status_id', 'type_id', 'priority_id', 'content']);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */
