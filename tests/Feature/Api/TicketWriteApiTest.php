@@ -123,6 +123,28 @@ class TicketWriteApiTest extends TestCase
         $this->assertSame('Default ticket', $ticket->fresh()->name);
     }
 
+    public function test_it_accepts_a_global_status_and_lists_it_for_any_project(): void
+    {
+        $ticket = $this->createTicket();
+        $global = TicketStatus::create([
+            'name' => 'Global Done',
+            'color' => '#008000',
+            'is_default' => false,
+            'order' => 9,
+            'project_id' => null,
+        ]);
+
+        $this->withToken(self::WRITE_TOKEN)
+            ->patchJson('/api/tickets/'.$ticket->id, ['status_id' => $global->id])
+            ->assertOk()
+            ->assertJsonPath('ticket.status.name', 'Global Done');
+
+        $this->withToken(self::READ_TOKEN)
+            ->getJson('/api/ticket-statuses?project_id='.$ticket->project_id)
+            ->assertOk()
+            ->assertJsonFragment(['id' => $global->id]);
+    }
+
     public function test_status_update_returns_not_found_for_unknown_ticket(): void
     {
         $this->withToken(self::WRITE_TOKEN)

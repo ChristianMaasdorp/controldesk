@@ -100,7 +100,10 @@ class TicketController extends Controller
     public function statuses(Request $request)
     {
         $statuses = TicketStatus::query()
-            ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', $request->integer('project_id')))
+            ->when($request->filled('project_id'), fn ($q) => $q->where(function ($q) use ($request) {
+                // Statuses can be global (project_id null) or project-specific.
+                $q->whereNull('project_id')->orWhere('project_id', $request->integer('project_id'));
+            }))
             ->orderBy('project_id')
             ->orderBy('order')
             ->get(['id', 'name', 'project_id', 'order']);
@@ -119,7 +122,10 @@ class TicketController extends Controller
             'status_id' => [
                 'required',
                 'integer',
-                Rule::exists('ticket_statuses', 'id')->where('project_id', $ticket->project_id),
+                Rule::exists('ticket_statuses', 'id')->where(function ($query) use ($ticket) {
+                    // Global statuses (project_id null) or this ticket's project's own.
+                    $query->whereNull('project_id')->orWhere('project_id', $ticket->project_id);
+                }),
             ],
         ]);
 
