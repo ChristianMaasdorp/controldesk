@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTicketRequest;
 use App\Models\Ticket;
+use App\Models\TicketComment;
+use App\Models\TicketStatus;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
@@ -87,6 +91,81 @@ class TicketController extends Controller
         return response()->json([
             'ticket' => $this->ticketDetail($ticket),
         ]);
+    }
+
+    /**
+     * List ticket statuses (statuses are per project) so API clients can
+     * resolve the status_id to send on update.
+     */
+    public function statuses(Request $request)
+    {
+        $statuses = TicketStatus::query()
+            ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', $request->integer('project_id')))
+            ->orderBy('project_id')
+            ->orderBy('order')
+            ->get(['id', 'name', 'project_id', 'order']);
+
+        return response()->json(['data' => $statuses]);
+    }
+
+    /**
+     * Change a ticket's status. Only the status can be changed through the API.
+     */
+    public function update(Request $request, $id)
+    {
+        $ticket = $this->findTicket($id);
+
+        $data = $request->validate([
+            'status_id' => [
+                'required',
+                'integer',
+                Rule::exists('ticket_statuses', 'id')->where('project_id', $ticket->project_id),
+            ],
+        ]);
+
+        $ticket->update($data);
+
+        return response()->json([
+            'message' => 'Ticket updated successfully.',
+            'ticket' => $this->ticketSummary($ticket->fresh(['project:id,name', 'status:id,name', 'type:id,name', 'priority:id,name', 'owner:id,name', 'responsible:id,name'])),
+        ]);
+    }
+
+    /**
+     * Add a comment to a ticket, attributed to the API service user.
+     */
+    public function addComment(Request $request, $id)
+    {
+        $ticket = $this->findTicket($id);
+
+        $data = $request->validate([
+            'content' => ['required', 'string', 'max:65535'],
+        ]);
+
+        $comment = TicketComment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => Auth::id(),
+            'content' => $data['content'],
+        ]);
+
+        return response()->json([
+            'message' => 'Comment added successfully.',
+            'comment' => [
+                'id' => $comment->id,
+                'content' => $comment->content,
+                'created_at' => $comment->created_at,
+                'user' => $this->namedRelation($comment->user),
+            ],
+        ], 201);
+    }
+
+    private function findTicket($id): Ticket
+    {
+        return Ticket::query()
+            ->where(function ($query) use ($id) {
+                $query->where('id', $id)->orWhere('code', $id);
+            })
+            ->firstOrFail();
     }
 
     private function ticketSummary(Ticket $ticket): array

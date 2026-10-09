@@ -62,6 +62,11 @@ class Ticket extends Model implements HasMedia
                 Ticket::where('id', $item->id)->update(['epic_id' => $item->sprint->epic_id]);
             }
 
+            // Tickets API writes are silent unless the caller opts in
+            if (request()->attributes->get('tickets.api.silent', false)) {
+                return;
+            }
+
             // Send generic notification to all project watchers
             foreach ($item->watchers as $user) {
                 $user->notify(new TicketCreated($item));
@@ -97,7 +102,7 @@ class Ticket extends Model implements HasMedia
                 ]);
 
                 // Only send notifications for status changes
-                if ($oldStatus != $item->status_id) {
+                if ($oldStatus != $item->status_id && ! request()->attributes->get('tickets.api.silent', false)) {
                     foreach ($item->watchers as $user) {
                         $user->notify(new TicketStatusUpdated($item));
                     }
