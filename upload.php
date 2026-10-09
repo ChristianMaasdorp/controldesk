@@ -9,7 +9,8 @@ function createTicket($apiUrl, $ticketData)
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
-        'Accept: application/json'
+        'Accept: application/json',
+        'Authorization: Bearer ' . getenv('TICKETS_API_WRITE_TOKEN')
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($ticketData));
 
