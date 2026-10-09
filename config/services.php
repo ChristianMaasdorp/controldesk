@@ -73,6 +73,8 @@ return [
 
     'tickets_api' => [
         'token' => env('TICKETS_API_TOKEN'),
+        'write_token' => env('TICKETS_API_WRITE_TOKEN'),
+        'user_id' => env('TICKETS_API_USER_ID'),
     ],
 
 ];
