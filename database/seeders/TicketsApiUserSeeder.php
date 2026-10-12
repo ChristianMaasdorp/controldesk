@@ -15,9 +15,9 @@ class TicketsApiUserSeeder extends Seeder
     public function run()
     {
         $user = User::firstOrCreate(
-            ['email' => 'pipeline@ncloud.africa'],
+            ['email' => 'agent@ncloud.africa'],
             [
-                'name' => 'Pipeline',
+                'name' => 'Agent',
                 'password' => bcrypt(Str::random(40)),
                 'email_verified_at' => now(),
             ]
