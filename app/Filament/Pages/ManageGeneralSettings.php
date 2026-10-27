@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Helpers\SafeFileUpload;
 use App\Models\Role;
 use App\Settings\GeneralSettings;
 use Filament\Forms\Components\Card;
@@ -48,7 +49,7 @@ class ManageGeneralSettings extends SettingsPage
                 ->schema([
                     Grid::make(3)
                         ->schema([
-                            FileUpload::make('site_logo')
+                            SafeFileUpload::apply(FileUpload::make('site_logo'), SafeFileUpload::IMAGES)
                                 ->label(__('Site logo'))
                                 ->helperText(__('This is the platform logo (e.g. Used in site favicon)'))
                                 ->image()

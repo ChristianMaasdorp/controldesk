@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
+use App\Helpers\SafeFileUpload;
 use App\Imports\TicketsImport;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -28,7 +29,7 @@ class ListTickets extends ListRecords
                 ->icon('heroicon-o-upload')
                 ->color('success')
                 ->form([
-                    Forms\Components\FileUpload::make('file')
+                    SafeFileUpload::apply(Forms\Components\FileUpload::make('file'), SafeFileUpload::SPREADSHEETS)
                         ->label('Excel / CSV file')
                         ->required()
                         ->disk('local')
