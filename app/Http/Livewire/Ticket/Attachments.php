@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Ticket;
 
+use App\Helpers\SafeFileUpload;
 use App\Models\Ticket;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -43,11 +44,12 @@ class Attachments extends Component implements HasForms, HasTable
     protected function getFormSchema(): array
     {
         return [
-            SpatieMediaLibraryFileUpload::make('attachments')
+            SafeFileUpload::apply(SpatieMediaLibraryFileUpload::make('attachments'), SafeFileUpload::attachments())
                 ->label(__('Attachments'))
                 ->hint(__('Important: If a file has the same name, it will be replaced'))
                 ->helperText(__('Here you can attach all files needed for this ticket'))
                 ->multiple()
+                ->maxSize(config('system.max_file_size'))
                 ->disablePreview()
         ];
     }

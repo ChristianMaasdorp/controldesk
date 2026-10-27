@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Exports\ProjectHoursExport;
 use App\Filament\Resources\ProjectResource\Pages;
+use App\Helpers\SafeFileUpload;
 use App\Filament\Resources\ProjectResource\RelationManagers;
 use App\Models\Project;
 use App\Models\ProjectFavorite;
@@ -54,7 +55,7 @@ class ProjectResource extends Resource
                         Forms\Components\Grid::make()
                             ->columns(3)
                             ->schema([
-                                Forms\Components\SpatieMediaLibraryFileUpload::make('cover')
+                                SafeFileUpload::apply(Forms\Components\SpatieMediaLibraryFileUpload::make('cover'), SafeFileUpload::IMAGES)
                                     ->label(__('Cover image'))
                                     ->collection('cover')
                                     ->image()
@@ -154,7 +155,7 @@ class ProjectResource extends Resource
                                     ->disabled(fn($record) => $record && $record->tickets()->count())
                                     ->required(),
 
-                                Forms\Components\SpatieMediaLibraryFileUpload::make('brs_document')
+                                SafeFileUpload::apply(Forms\Components\SpatieMediaLibraryFileUpload::make('brs_document'), ['pdf', 'doc', 'docx'])
                                     ->label(__('BRS Document'))
                                     ->collection('brs_document')
                                     ->columnSpan(2)
